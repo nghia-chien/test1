@@ -5,6 +5,7 @@ import 'closet_page.dart';
 import 'ai_mix_page.dart';
 import 'profile_page.dart';
 import 'chat_screen.dart';
+import '../utils/responsive_helper.dart';
 
 class MainScreen extends StatefulWidget {
   final Function(bool) onThemeChanged;
@@ -38,9 +39,12 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = ResponsiveHelper.isDesktop(context);
+    final bool isTablet = ResponsiveHelper.isTablet(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fashion Mix'),
+        title: const Text('Tủ Đồ Thông Minh'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
@@ -60,22 +64,150 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      drawer: Drawer(
+      body: Row(
+        children: [
+          if (isDesktop || isTablet)
+            NavigationRail(
+              extended: isDesktop,
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Icon(Icons.home),
+                  label: Text('Trang Chủ'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.feed),
+                  label: Text('Bảng Tin'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.checkroom),
+                  label: Text('Tủ Đồ'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.auto_awesome),
+                  label: Text('Mix Đồ AI'),
+                ),
+              ],
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: _onItemTapped,
+            ),
+          Expanded(
+            child: Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveHelper.getMaxWidth(context),
+                ),
+                padding: ResponsiveHelper.getScreenPadding(context),
+                child: _pages[_selectedIndex],
+              ),
+            ),
+          ),
+          if (isDesktop)
+            SizedBox(
+              width: 300,
+              child: Drawer(
+                elevation: 0,
+                child: Column(
+                  children: [
+                    UserAccountsDrawerHeader(
+                      currentAccountPicture: const CircleAvatar(
+                        backgroundImage: NetworkImage('https://picsum.photos/200'),
+                      ),
+                      accountName: const Text('Nguyễn Văn A'),
+                      accountEmail: const Text('nguyenvana@example.com'),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.person),
+                      title: const Text('Hồ Sơ'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfilePage(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.chat_bubble),
+                      title: const Text('Trợ Lý AI'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(isDarkMode: widget.isDarkMode),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.favorite),
+                      title: const Text('Yêu Thích'),
+                      onTap: () {
+                        // TODO: Navigate to favorites page
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.history),
+                      title: const Text('Lịch Sử'),
+                      onTap: () {
+                        // TODO: Navigate to history page
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.settings),
+                      title: const Text('Cài Đặt'),
+                      onTap: () {
+                        // TODO: Navigate to settings page
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+                      title: Text(widget.isDarkMode ? 'Chế Độ Sáng' : 'Chế Độ Tối'),
+                      onTap: () {
+                        widget.onThemeChanged(!widget.isDarkMode);
+                      },
+                    ),
+                    const Spacer(),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.logout),
+                      title: const Text('Đăng Xuất'),
+                      onTap: () {
+                        // TODO: Implement logout
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfilePage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+      drawer: (!isDesktop && !isTablet) ? Drawer(
         child: Column(
           children: [
             UserAccountsDrawerHeader(
               currentAccountPicture: const CircleAvatar(
                 backgroundImage: NetworkImage('https://picsum.photos/200'),
               ),
-              accountName: const Text('John Doe'),
-              accountEmail: const Text('john.doe@example.com'),
+              accountName: const Text('Nguyễn Văn A'),
+              accountEmail: const Text('nguyenvana@example.com'),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
             ListTile(
               leading: const Icon(Icons.person),
-              title: const Text('Profile'),
+              title: const Text('Hồ Sơ'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -87,8 +219,21 @@ class _MainScreenState extends State<MainScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.chat_bubble),
+              title: const Text('Trợ Lý AI'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(isDarkMode: widget.isDarkMode),
+                  ),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.favorite),
-              title: const Text('Favorites'),
+              title: const Text('Yêu Thích'),
               onTap: () {
                 // TODO: Navigate to favorites page
                 Navigator.pop(context);
@@ -96,7 +241,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.history),
-              title: const Text('History'),
+              title: const Text('Lịch Sử'),
               onTap: () {
                 // TODO: Navigate to history page
                 Navigator.pop(context);
@@ -104,7 +249,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
+              title: const Text('Cài Đặt'),
               onTap: () {
                 // TODO: Navigate to settings page
                 Navigator.pop(context);
@@ -113,7 +258,7 @@ class _MainScreenState extends State<MainScreen> {
             const Divider(),
             ListTile(
               leading: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
-              title: Text(widget.isDarkMode ? 'Light Mode' : 'Dark Mode'),
+              title: Text(widget.isDarkMode ? 'Chế Độ Sáng' : 'Chế Độ Tối'),
               onTap: () {
                 widget.onThemeChanged(!widget.isDarkMode);
                 Navigator.pop(context);
@@ -123,11 +268,11 @@ class _MainScreenState extends State<MainScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
+              title: const Text('Đăng Xuất'),
               onTap: () {
                 // TODO: Implement logout
                 Navigator.pop(context);
-                 Navigator.push(
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ProfilePage(),
@@ -137,9 +282,8 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ],
         ),
-      ),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
+      ) : null,
+      bottomNavigationBar: (!isDesktop && !isTablet) ? BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         selectedItemColor: Theme.of(context).colorScheme.primary,
@@ -148,22 +292,22 @@ class _MainScreenState extends State<MainScreen> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Trang Chủ',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.feed),
-            label: 'Feed',
+            label: 'Bảng Tin',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.checkroom),
-            label: 'Closet',
+            label: 'Tủ Đồ',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.auto_awesome),
-            label: 'AI Mix',
+            label: 'Mix Đồ AI',
           ),
         ],
-      ),
+      ) : null,
     );
   }
 } 
