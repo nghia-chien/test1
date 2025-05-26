@@ -27,7 +27,6 @@ class _MainScreenState extends State<MainScreen> {
     const HomePage(),
     const FeedPage(),
     const ClosetPage(),
-    const AiMixPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -44,6 +43,17 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AiMixPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Badge(
               label: Text('2'),
@@ -157,10 +167,6 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.checkroom),
             label: 'Closet',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.auto_awesome),
-            label: 'AI Mix',
           ),
         ],
       ),
