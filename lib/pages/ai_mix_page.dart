@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
+import '../utils/responsive_helper.dart';
 
 class AiMixPage extends StatefulWidget {
   const AiMixPage({super.key});
@@ -61,6 +62,10 @@ class _AiMixPageState extends State<AiMixPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final crossAxisCount = ResponsiveHelper.getCrossAxisCount(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mix Đồ Thông Minh'),
@@ -70,7 +75,7 @@ class _AiMixPageState extends State<AiMixPage> {
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: ResponsiveHelper.getScreenPadding(context),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               boxShadow: [
@@ -97,10 +102,50 @@ class _AiMixPageState extends State<AiMixPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
+                if (isDesktop || isTablet)
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextField(
+                          controller: _promptController,
+                          decoration: InputDecoration(
+                            hintText: 'Ví dụ: "đồ mùa hè năng động" hoặc "trang phục công sở"',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surface,
+                          ),
+                          onSubmitted: (_) => _generateSuggestions(),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _generateSuggestions,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.auto_awesome),
+                          label: const Text('Tìm Kiếm'),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Column(
+                    children: [
+                      TextField(
                         controller: _promptController,
                         decoration: InputDecoration(
                           hintText: 'Ví dụ: "đồ mùa hè năng động" hoặc "trang phục công sở"',
@@ -112,26 +157,29 @@ class _AiMixPageState extends State<AiMixPage> {
                         ),
                         onSubmitted: (_) => _generateSuggestions(),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _generateSuggestions,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _generateSuggestions,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.auto_awesome),
+                          label: const Text('Tìm Kiếm'),
                         ),
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.auto_awesome),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 const SizedBox(height: 16),
                 Text(
                   'Tìm Kiếm Gần Đây',
@@ -188,9 +236,9 @@ class _AiMixPageState extends State<AiMixPage> {
                             ),
                           )
                         : GridView.builder(
-                            padding: const EdgeInsets.all(16),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
+                            padding: ResponsiveHelper.getScreenPadding(context),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
                               childAspectRatio: 0.75,
                               mainAxisSpacing: 16,
                               crossAxisSpacing: 16,
