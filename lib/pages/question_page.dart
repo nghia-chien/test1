@@ -119,8 +119,7 @@ class _QuestionPageState extends State<QuestionPage> {
           context,
           MaterialPageRoute(
             builder: (_) => MainScreen(
-              isDarkMode: false, // hoặc giá trị phù hợp từ cài đặt
-              onThemeChanged: (bool isDark) {},
+              
             ),
           ),
         );

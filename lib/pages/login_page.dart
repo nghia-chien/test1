@@ -72,8 +72,7 @@ class _LoginPageState extends State<LoginPage> {
             context,
             MaterialPageRoute(
               builder: (_) => MainScreen(
-                isDarkMode: false,
-                onThemeChanged: (bool isDark) {},
+                
               ),
             ),
           );
@@ -135,8 +134,6 @@ class _LoginPageState extends State<LoginPage> {
             context,
             MaterialPageRoute(
               builder: (_) => MainScreen(
-                isDarkMode: false,
-                onThemeChanged: (bool isDark) {},
               ),
             ),
           );
@@ -172,8 +169,6 @@ class _LoginPageState extends State<LoginPage> {
               context,
               MaterialPageRoute(
                 builder: (_) => MainScreen(
-                  isDarkMode: false,
-                  onThemeChanged: (bool isDark) {},
                 ),
               ),
             );

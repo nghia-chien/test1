@@ -56,6 +56,10 @@ dependencies:
   shared_preferences: ^2.5.3
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.1.1 
+  image_picker: ^1.1.0
+  path: ^1.9.0
+  geolocator: ^14.0.2
+  http: ^1.4.0
 
 dev_dependencies:
   flutter_test:

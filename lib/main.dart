@@ -71,8 +71,7 @@ class AuthGate extends StatelessWidget {
               }
               if (infoSnapshot.data == true) {
                 return MainScreen(
-                  isDarkMode: false,
-                  onThemeChanged: (bool value) {},
+                 
                 );
               } else {
                 return const QuestionPage();
