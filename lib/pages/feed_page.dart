@@ -1,4 +1,11 @@
+
 import 'package:flutter/material.dart';
+import 'dart:html' as html;
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:typed_data';
+
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -9,72 +16,235 @@ class FeedPage extends StatefulWidget {
 
 class _FeedPageState extends State<FeedPage> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _postController = TextEditingController();
+  bool _isPosting = false;
+  String? _base64Image;
   String _searchQuery = '';
 
-  final List<FashionPost> _posts = [
-    FashionPost(
-      username: 'Sophie_Style',
-      title: 'Summer Vibes Collection',
-      description: 'Perfect outfit for a beach day! 🌊',
-      imageUrl: 'lib/images/feed/summer_vibe.jpg',
-      likes: 234,
-      comments: 45,
-    ),
-    FashionPost(
-      username: 'Fashion_Forward',
-      title: 'Urban Street Style',
-      description: 'Mixing casual with chic for the perfect street look 🌆',
-      imageUrl: 'lib/images/feed/urban_street.jpg',
-      likes: 567,
-      comments: 89,
-    ),
-    FashionPost(
-      username: 'Trendsetter',
-      title: 'Autumn Essentials',
-      description: 'Cozy and stylish pieces for fall 🍂',
-      imageUrl: 'lib/images/feed/autumn_essentials.jpg',
-      likes: 789,
-      comments: 123,
-    ),
-    FashionPost(
-      username: 'ClassicWardrobe',
-      title: 'Timeless Elegance',
-      description: 'Classic pieces that never go out of style ✨',
-      imageUrl: 'lib/images/feed/timeless_elegance.jpg',
-      likes: 432,
-      comments: 67,
-    ),
-  ];
+  Future<void> _pickImage() async {
+    final input = html.FileUploadInputElement()..accept = 'image/*';
+    input.click();
 
-  List<FashionPost> get filteredPosts {
-    if (_searchQuery.isEmpty) {
-      return _posts;
+    await input.onChange.first;
+
+    if (input.files != null && input.files!.isNotEmpty) {
+      final file = input.files!.first;
+      if (file.size > 700 * 1024) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ảnh quá lớn, vui lòng chọn ảnh < 700KB')),
+        );
+        return;
+      }
+      final reader = html.FileReader();
+      reader.readAsDataUrl(file);
+      await reader.onLoad.first;
+      setState(() {
+        _base64Image = reader.result as String;
+      });
     }
-    return _posts.where((post) {
-      return post.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          post.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          post.description.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Future<void> _submitPost() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final content = _postController.text.trim();
+    if (user == null || (content.isEmpty && _base64Image == null)) return;
+    setState(() => _isPosting = true);
+
+    await FirebaseFirestore.instance.collection('posts').add({
+      'uid': user.uid,
+      'username': user.email ?? 'Người dùng',
+      'content': content,
+      'imageBase64': _base64Image,
+      'createdAt': FieldValue.serverTimestamp(),
+      'likes': [],
+    });
+
+    setState(() {
+      _postController.clear();
+      _base64Image = null;
+      _isPosting = false;
+    });
+  }
+
+  Future<void> _showCommentsDialog(DocumentSnapshot postDoc) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final TextEditingController commentController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SizedBox(
+            height: 400,
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                const Text('Bình luận', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: postDoc.reference.collection('comments').orderBy('createdAt', descending: true).snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      final comments = snapshot.data!.docs;
+                      if (comments.isEmpty) return const Center(child: Text('Chưa có bình luận.'));
+                      return ListView.builder(
+                        itemCount: comments.length,
+                        itemBuilder: (context, i) {
+                          final c = comments[i];
+                          return ListTile(
+                            leading: CircleAvatar(child: Text((c['username'] ?? 'U')[0])),
+                            title: Text(c['username'] ?? 'User'),
+                            subtitle: Text(c['content'] ?? ''),
+                            trailing: c['createdAt'] != null ? Text(
+                              (c['createdAt'] as Timestamp).toDate().toString().substring(0, 16),
+                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            ) : null,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                if (user != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: commentController,
+                            decoration: const InputDecoration(hintText: 'Nhập bình luận...'),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.send),
+                          onPressed: () async {
+                            final content = commentController.text.trim();
+                            if (content.isEmpty) return;
+                            await postDoc.reference.collection('comments').add({
+                              'uid': user.uid,
+                              'username': user.email ?? 'User',
+                              'content': content,
+                              'createdAt': FieldValue.serverTimestamp(),
+                            });
+                            commentController.clear();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPostItem(DocumentSnapshot doc) {
+    final user = FirebaseAuth.instance.currentUser;
+    final data = doc.data() as Map<String, dynamic>;
+    final username = data['username'] ?? 'User';
+    final content = data['content'] ?? '';
+    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+    final base64 = data['imageBase64'] as String?;
+    final likes = (data['likes'] as List?)?.cast<String>() ?? [];
+    final isLiked = user != null && likes.contains(user.uid);
+    Uint8List? imageBytes;
+
+    if (base64 != null && base64.isNotEmpty) {
+      try {
+        imageBytes = base64Decode(base64.split(',').last);
+      } catch (_) {}
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(child: Text(username[0])),
+                const SizedBox(width: 8),
+                Text(username, style: const TextStyle(fontWeight: FontWeight.bold)),
+                const Spacer(),
+                if (createdAt != null)
+                  Text(
+                    '${createdAt.day}/${createdAt.month}/${createdAt.year}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  )
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (imageBytes != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  imageBytes,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  cacheHeight: 300,
+                ),
+              ),
+            if (content.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(content),
+              ),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border, color: isLiked ? Colors.red : null),
+                  onPressed: user == null ? null : () async {
+                    final postRef = doc.reference;
+                    if (isLiked) {
+                      await postRef.update({ 'likes': FieldValue.arrayRemove([user.uid]) });
+                    } else {
+                      await postRef.update({ 'likes': FieldValue.arrayUnion([user.uid]) });
+                    }
+                  },
+                ),
+                Text('${likes.length}'),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: const Icon(Icons.comment),
+                  onPressed: () => _showCommentsDialog(doc),
+                ),
+                StreamBuilder<QuerySnapshot>(
+                  stream: doc.reference.collection('comments').snapshots(),
+                  builder: (context, commentSnap) {
+                    final commentCount = commentSnap.hasData ? commentSnap.data!.docs.length : 0;
+                    return Text('$commentCount');
+                  },
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
+      appBar: AppBar(title: const Text('Feed cộng đồng')), 
       body: Column(
         children: [
-          // Search Bar
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search fashion items...',
+                hintText: 'Tìm kiếm bài viết... (theo nội dung hoặc tên)',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -89,125 +259,72 @@ class _FeedPageState extends State<FeedPage> {
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2,
-                  ),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
+              onChanged: (value) => setState(() => _searchQuery = value),
             ),
           ),
-
-          // Posts List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8),
-              itemCount: filteredPosts.length,
-              itemBuilder: (context, index) {
-                final post = filteredPosts[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  clipBehavior: Clip.antiAlias,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _postController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      hintText: 'Bạn muốn chia sẻ điều gì?',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 8),
+                  Row(
                     children: [
-                      // User Info
-                      ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(
-                            'https://picsum.photos/50/50?random=${index + 10}',
-                          ),
-                        ),
-                        title: Text(
-                          post.username,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(post.title),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.more_vert),
-                          onPressed: () {
-                            // TODO: Implement post options
-                          },
-                        ),
+                      ElevatedButton.icon(
+                        onPressed: _pickImage,
+                        icon: const Icon(Icons.image),
+                        label: const Text('Chọn ảnh'),
                       ),
-
-                      // Image
-                      AspectRatio(
-                        aspectRatio: 4 / 5,
-                        child: Image.network(
-                          post.imageUrl,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-
-                      // Actions
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.favorite_border),
-                              onPressed: () {
-                                // TODO: Implement like functionality
-                              },
-                            ),
-                            Text('${post.likes}'),
-                            const SizedBox(width: 16),
-                            IconButton(
-                              icon: const Icon(Icons.comment_outlined),
-                              onPressed: () {
-                                // TODO: Implement comment functionality
-                              },
-                            ),
-                            Text('${post.comments}'),
-                            const Spacer(),
-                            IconButton(
-                              icon: const Icon(Icons.bookmark_border),
-                              onPressed: () {
-                                // TODO: Implement save functionality
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Description
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              post.description,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '2 hours ago',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      if (_base64Image != null) ...[
+                        const SizedBox(width: 12),
+                        Text('Đã chọn ảnh', style: TextStyle(color: Colors.green[700]))
+                      ],
+                      const Spacer(),
+                      ElevatedButton(
+                        onPressed: _isPosting ? null : _submitPost,
+                        child: _isPosting
+                            ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Text('Đăng bài'),
+                      )
                     ],
                   ),
+                ],
+              ),
+            ),
+          const Divider(),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('posts')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final docs = snapshot.data?.docs ?? [];
+                final filtered = _searchQuery.isEmpty
+                    ? docs
+                    : docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final content = (data['content'] ?? '').toString().toLowerCase();
+                        final username = (data['username'] ?? '').toString().toLowerCase();
+                        return content.contains(_searchQuery.toLowerCase()) ||
+                               username.contains(_searchQuery.toLowerCase());
+                      }).toList();
+                return ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) => _buildPostItem(filtered[index]),
                 );
               },
             ),
@@ -217,21 +334,3 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 }
-
-class FashionPost {
-  final String username;
-  final String title;
-  final String description;
-  final String imageUrl;
-  final int likes;
-  final int comments;
-
-  FashionPost({
-    required this.username,
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.likes,
-    required this.comments,
-  });
-} 

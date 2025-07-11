@@ -6,6 +6,7 @@ import 'closet_page.dart';
 import 'ai_mix_page.dart';
 import 'profile_page.dart';
 import 'home_page.dart';
+import 'notification.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -16,7 +17,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  String? _userName;
 
   final List<Widget> _pages = const [
     HomePage(),
@@ -33,66 +33,22 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _loadUserName();
-  }
-
-  Future<void> _loadUserName() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      if (doc.exists) {
-        setState(() {
-          _userName = doc.data()?['name'] ?? 'Guest';
-        });
-      } else {
-        setState(() {
-          _userName = 'Guest';
-        });
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Color(0xFFA3C7E6),
-      appBar: AppBar(
-        backgroundColor:Color.fromARGB(255, 255, 255, 255),
-        elevation: 0,
-        title: Text(
-          _selectedIndex == 0 ? "Hi, ${_userName ?? 'Loading...'} 👋" : _getTitle(_selectedIndex),
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: Color.fromARGB(255, 0, 0, 0),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {},
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {},
-          ),
-           IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilePage()),
-              );
-            },
+      backgroundColor: const Color(0xFFA3C7E6),
+      body: Column(
+        children: [
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: _pages,
+            ),
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -100,43 +56,12 @@ class _MainScreenState extends State<MainScreen> {
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.6),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.style),
-            label: 'Feed',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.checkroom),
-            label: 'Closet',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.auto_awesome),
-            label: 'AI Mix',
-          ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.person),
-          //   label: 'Profile',
-          // ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.public), label: 'Feed'),
+          BottomNavigationBarItem(icon: Icon(Icons.checkroom), label: 'Closet'),
+          BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI Mix'),
         ],
       ),
     );
-  }
-
-  String _getTitle(int index) {
-    switch (index) {
-      case 1:
-        return 'Feed';
-      case 2:
-        return 'Closet';
-      case 3:
-        return 'AI Mix';
-      case 4:
-        return 'Profile';
-      default:
-        return '';
-    }
   }
 }
