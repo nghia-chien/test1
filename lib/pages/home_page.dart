@@ -8,6 +8,8 @@ import 'notification.dart';
 import 'profile_page.dart';
 import 'uploadimage_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'calendar_page.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -130,54 +132,105 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildActionRow() {
+    final actions = [
+      {'icon': Icons.upload_file, 'label': 'Upload'},
+      {'icon': Icons.checkroom, 'label': 'Create'},
+      {'icon': Icons.calendar_today, 'label': 'Plan'},
+      {'icon': Icons.bar_chart, 'label': 'Review'},
+      {'icon': Icons.history, 'label': 'History'},
+    ];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _actionButton(Icons.upload_file, "Upload", onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const UploadClothingPage()));
-        }),
-        _actionButton(Icons.checkroom, "Create", onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng đang phát triển')));
-        }),
-        _actionButton(Icons.calendar_today, "Plan", onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng đang phát triển')));
-        }),
-        _actionButton(Icons.bar_chart, "Review", onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng đang phát triển')));
-        }),
-        _actionButton(Icons.history, "History", onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng đang phát triển')));
-        }),
-      ],
+      children: actions.asMap().entries.map((entry) {
+        final index = entry.key;
+        final action = entry.value;
+        return Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          elevation: 2,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () {
+              if (action['icon'] == Icons.calendar_today) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CalendarPage()),
+                );
+              } else {
+                
+              }
+              if(action['icon'] == Icons.upload_file) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UploadClothingPage()),
+                );
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+              child: Column(
+                children: [
+                  Icon(action['icon'] as IconData, color: const Color(0xFF5B67CA), size: 28),
+                  const SizedBox(height: 6),
+                  Text(action['label'] as String, style: const TextStyle(fontSize: 13, color: Color(0xFF2C3E50))),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildAIStylishPrompt() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: const Color(0xFF2196F3).withOpacity(0.2),
-          child: const Icon(Icons.smart_toy, color: Color(0xFF2196F3), size: 28),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF39C12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text("Hỏi gì cũng được!", style: TextStyle(color: Colors.white, fontSize: 14)),
+
+Widget _buildAIStylishPrompt() {
+    return Material(
+      elevation: 3,
+      borderRadius: BorderRadius.circular(18),
+      color: Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ChatScreen(),
             ),
-            const SizedBox(height: 6),
-            const Text("AI Stylish", style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Color(0xFF0D47A1))),
-          ],
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: const Color(0xFF5B67CA).withOpacity(0.12),
+                child: const Icon(Icons.smart_toy, color: Color(0xFF5B67CA), size: 32),
+              ),
+              const SizedBox(width: 18),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DefaultTextStyle(
+                    style: const TextStyle(fontSize: 16, color: Colors.black),
+                    child: AnimatedTextKit(
+                      animatedTexts: [
+                        TypewriterAnimatedText('Chào bạn đến với WHY'),
+                        TypewriterAnimatedText('Bạn muốn tư vấn điều gì?'),
+                        TypewriterAnimatedText('Hãy nhập điều bạn muốn!'),
+                      ],
+                      repeatForever: true,
+                      pause: const Duration(milliseconds: 1200),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text("AI Stylish", style: TextStyle(fontSize: 17, fontStyle: FontStyle.italic, color: Color(0xFF0D47A1))),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 
