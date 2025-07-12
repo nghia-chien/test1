@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'register_pages.dart';
 import 'main_screen.dart';
+import 'package:flutter/foundation.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -58,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = true;
       _errorMessage = null;
     });
-
+    
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -495,6 +496,26 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                    // Thêm nút login nhanh (debug) ở cuối form
+                    if (kDebugMode)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await FirebaseAuth.instance.signInWithEmailAndPassword(
+                              email: 'hacphichien@gmail.com',
+                              password: '123456',
+                            );
+                            if (mounted) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => const MainScreen()),
+                              );
+                            }
+                          },
+                          child: const Text('Login nhanh (debug)'),
                         ),
                       ),
                   ],

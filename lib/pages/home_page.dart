@@ -10,6 +10,7 @@ import 'uploadimage_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'calendar_page.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
+import '../utils/responsive_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -92,7 +93,13 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFECF0F1),
         elevation: 0,
-        title: Text("Hi, ${_userName ?? 'Loading...'} 👋"),
+        title: Text(
+          "Hi,  ${_userName ?? 'Loading...'} 👋",
+          style: TextStyle(
+            fontSize: ResponsiveHelper.isMobile(context) ? 20 : ResponsiveHelper.isTablet(context) ? 24 : 28,
+            color: Colors.black,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications, color: Colors.black),
@@ -107,24 +114,31 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 5),
-              _buildActionRow(),
-              const SizedBox(height: 20),
-              _buildAIStylishPrompt(),
-              const SizedBox(height: 30),
-              _buildSearchBox(),
-              const SizedBox(height: 30),
-              _buildRecentOutfitsTitle(),
-              const SizedBox(height: 12),
-              _buildRecentOutfits(),
-              const SizedBox(height: 32),
-              buildWeatherCard(),
-            ],
+        child: Center(
+          child: Container(
+            padding: ResponsiveHelper.getScreenPadding(context),
+            constraints: BoxConstraints(
+              maxWidth: ResponsiveHelper.getMaxWidth(context),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 5),
+                  _buildActionRow(),
+                  const SizedBox(height: 20),
+                  _buildAIStylishPrompt(),
+                  const SizedBox(height: 30),
+                  _buildSearchBox(),
+                  const SizedBox(height: 30),
+                  _buildRecentOutfitsTitle(),
+                  const SizedBox(height: 12),
+                  _buildRecentOutfits(),
+                  const SizedBox(height: 32),
+                  buildWeatherCard(),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -136,13 +150,11 @@ class _HomePageState extends State<HomePage> {
       {'icon': Icons.upload_file, 'label': 'Upload'},
       {'icon': Icons.checkroom, 'label': 'Create'},
       {'icon': Icons.calendar_today, 'label': 'Plan'},
-      {'icon': Icons.bar_chart, 'label': 'Review'},
       {'icon': Icons.history, 'label': 'History'},
     ];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: actions.asMap().entries.map((entry) {
-        final index = entry.key;
         final action = entry.value;
         return Material(
           color: Colors.white,
