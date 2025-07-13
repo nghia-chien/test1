@@ -5,7 +5,7 @@ import 'feed_page.dart';
 import 'closet_page.dart';
 import 'ai_mix_page.dart';
 import 'notification.dart';
-import 'profile_page.dart';
+import 'profile_page2.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -100,12 +100,40 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  void _showNotifications() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => const NotificationPanel(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isWideScreen = ResponsiveHelper.isDesktop(context) || ResponsiveHelper.isTablet(context);
 
     return Scaffold(
+      appBar: isWideScreen ? null : AppBar(
+        backgroundColor: const Color(0xFFECF0F1),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.black),
+            onPressed: _showNotifications,
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_outline, color: Colors.black),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ClosetPage()));
+            },
+          ),
+        ],
+      ),
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body: isWideScreen
         ? Row(
@@ -200,7 +228,7 @@ class _MainScreenState extends State<MainScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(16), // ✅ bo góc
             child: Container(
-              color: const Color.fromARGB(199, 0, 99, 174), // ✅ màu nền
+              color: const Color.fromARGB(191, 0, 48, 78), // ✅ màu nền
               width: logoSize,
               height: logoSize,
               child: Image.asset(
@@ -479,8 +507,6 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
-
 }
 
 class SidebarItem {

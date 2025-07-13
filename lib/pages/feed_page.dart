@@ -51,9 +51,12 @@ class _FeedPageState extends State<FeedPage> {
     if (user == null || (content.isEmpty && _base64Image == null)) return;
     setState(() => _isPosting = true);
 
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final name = userDoc.data()?['name'] ?? user.email ?? 'Người dùng';
+
     await FirebaseFirestore.instance.collection('posts').add({
       'uid': user.uid,
-      'username': user.email ?? 'Người dùng',
+      'username': name,
       'content': content,
       'imageBase64': _base64Image,
       'createdAt': FieldValue.serverTimestamp(),
@@ -150,7 +153,7 @@ class _FeedPageState extends State<FeedPage> {
                       itemCount: comments.length,
                       itemBuilder: (context, i) {
                         final c = comments[i];
-                        final username = c['username'] ?? 'User';
+                        final username = c['name'] ?? c['username'] ?? 'User';
                         final content = c['content'] ?? '';
                         final createdAt = (c['createdAt'] as Timestamp?)?.toDate();
                         
@@ -281,12 +284,16 @@ class _FeedPageState extends State<FeedPage> {
     final content = controller.text.trim();
     if (content.isEmpty) return;
     
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final name = userDoc.data()?['name'] ?? user.email ?? 'User';
+
     await postDoc.reference.collection('comments').add({
       'uid': user.uid,
-      'username': user.email ?? 'User',
+      'name': name,
       'content': content,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
     controller.clear();
   }
 

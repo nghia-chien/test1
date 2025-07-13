@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
+import 'uploadimage_page.dart';
 
 class ClosetPage extends StatefulWidget {
   const ClosetPage({super.key});
@@ -35,7 +36,7 @@ class _ClosetPageState extends State<ClosetPage> {
       backgroundColor: const Color(0xFFE7ECEF),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: [       
           const SizedBox(height: 16),
           // Category Filter
           SizedBox(
@@ -128,13 +129,19 @@ class _ClosetPageState extends State<ClosetPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Add new item logic
+          
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UploadClothingPage()),
+                );
+              
         },
         icon: const Icon(Icons.add),
         label: const Text('Thêm đồ'),
       ),
     );
   }
+
 }
 
 class _ClothingItemCard extends StatelessWidget {

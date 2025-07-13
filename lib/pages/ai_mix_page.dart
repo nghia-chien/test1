@@ -116,11 +116,6 @@ class _AiMixPageState extends State<AiMixPage> {
     final crossAxisCount = ResponsiveHelper.getCrossAxisCount(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mix Đồ Thông Minh'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
-      ),
       backgroundColor: const Color(0xFFE7ECEF),
       body: SafeArea(
         child: Column(

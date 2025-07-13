@@ -5,7 +5,7 @@ import '../services/location_service.dart';
 import '../services/weather_service.dart';
 import 'chat_screen.dart';
 import 'notification.dart';
-import 'profile_page.dart';
+import 'profile_page1.dart';
 import 'uploadimage_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'calendar_page.dart';
@@ -35,11 +35,35 @@ class _HomePageState extends State<HomePage> {
     'lib/images/feed/urban_street.jpg',
   ];
 
+  List<AnimatedText> _generateAnimatedTexts() {
+    final name = _userName ?? 'bạn';
+    List<String> messages = [
+      'Chào bạn quay trở lại, $name ',
+      'Bạn muốn tư vấn điều gì?',
+      'Hãy nhập điều bạn muốn!',
+    ];
+    if (weatherDescription != null && temperature != null) {
+      if (temperature! >= 28) {
+        messages.insert(1, 'Hôm nay trời nóng, bạn có muốn mặc bộ đồ mát mẻ?');
+      } else if (temperature! <= 20) {
+        messages.insert(1, 'Có vẻ trời đang lạnh, bạn có muốn chọn bộ đồ ấm áp?');
+      }
+    }
+    return messages
+        .map((msg) => TypewriterAnimatedText(msg, speed: const Duration(milliseconds: 60)))
+        .toList();
+  }
+
   @override
   void initState() {
     super.initState();
     _loadUserName();
     fetchWeatherData();
+  }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserName() async {
@@ -74,45 +98,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _showNotifications() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => const NotificationPanel(),
-    );
-  }
-
+//build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFECF0F1),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFECF0F1),
-        elevation: 0,
-        title: Text(
-          "Hi,  ${_userName ?? 'Loading...'} 👋",
-          style: TextStyle(
-            fontSize: ResponsiveHelper.isMobile(context) ? 20 : ResponsiveHelper.isTablet(context) ? 24 : 28,
-            color: Colors.black,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.black),
-            onPressed: _showNotifications,
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.black),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
-            },
-          ),
-        ],
-      ),
+      
       body: SafeArea(
         child: Center(
           child: Container(
@@ -194,8 +185,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
-Widget _buildAIStylishPrompt() {
+  Widget _buildAIStylishPrompt() {
     return Material(
       elevation: 3,
       borderRadius: BorderRadius.circular(18),
@@ -220,24 +210,35 @@ Widget _buildAIStylishPrompt() {
                 child: const Icon(Icons.smart_toy, color: Color(0xFF5B67CA), size: 32),
               ),
               const SizedBox(width: 18),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DefaultTextStyle(
-                    style: const TextStyle(fontSize: 16, color: Colors.black),
-                    child: AnimatedTextKit(
-                      animatedTexts: [
-                        TypewriterAnimatedText('Chào bạn đến với WHY'),
-                        TypewriterAnimatedText('Bạn muốn tư vấn điều gì?'),
-                        TypewriterAnimatedText('Hãy nhập điều bạn muốn!'),
-                      ],
-                      repeatForever: true,
-                      pause: const Duration(milliseconds: 1200),
+              // Text section - wrapped and constrained
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DefaultTextStyle(
+                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      child: AnimatedTextKit(
+                        animatedTexts: _generateAnimatedTexts(),
+                        repeatForever: true,
+                        pause: const Duration(milliseconds: 1200),
+                        isRepeatingAnimation: true,
+                        displayFullTextOnTap: true,
+                        stopPauseOnTap: true,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text("AI Stylish", style: TextStyle(fontSize: 17, fontStyle: FontStyle.italic, color: Color(0xFF0D47A1))),
-                ],
+                    const SizedBox(height: 8),
+                    const Text(
+                      "AI Stylish",
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontStyle: FontStyle.italic,
+                        color: Color(0xFF0D47A1),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -304,41 +305,21 @@ Widget _buildAIStylishPrompt() {
   }
 
   Widget _buildRecentOutfits() {
+    double height = ResponsiveHelper.isMobile(context) ? 70 : 100;
     return SizedBox(
-      height: 80,
+      height: height,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        children: outfitImagePaths.map((url) => _recentOutfitImg(url)).toList(),
+        children: outfitImagePaths.map((url) => _recentOutfitImg(url, height)).toList(),
       ),
     );
   }
 
-  Widget _actionButton(IconData icon, String label, {VoidCallback? onPressed}) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: onPressed,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-            ),
-            child: Icon(icon, color: const Color(0xFF2C3E50), size: 24),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF2C3E50))),
-      ],
-    );
-  }
-
-  Widget _recentOutfitImg(String url) {
+  Widget _recentOutfitImg(String url, double size) {
     return Container(
       margin: const EdgeInsets.only(right: 12),
-      width: 80,
-      height: 80,
+      width: size,
+      height: size,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: CachedNetworkImage(
