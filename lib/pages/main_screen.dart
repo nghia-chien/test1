@@ -6,6 +6,7 @@ import 'closet_page.dart';
 import 'ai_mix_page.dart';
 import 'notification.dart';
 import 'profile_page2.dart';
+import 'profile_page1.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -129,7 +130,7 @@ class _MainScreenState extends State<MainScreen> {
           IconButton(
             icon: const Icon(Icons.person_outline, color: Colors.black),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ClosetPage()));
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage1()));
             },
           ),
         ],
@@ -155,7 +156,7 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
-                      color: Color(0xFFA3C7E6),
+                      color: Color.fromARGB(255, 125, 125, 123),
                     ),
             child: IndexedStack(
               index: _selectedIndex,
@@ -228,7 +229,7 @@ class _MainScreenState extends State<MainScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(16), // ✅ bo góc
             child: Container(
-              color: const Color.fromARGB(191, 0, 48, 78), // ✅ màu nền
+              color: const Color.fromARGB(189, 255, 0, 0), // ✅ màu nền
               width: logoSize,
               height: logoSize,
               child: Image.asset(

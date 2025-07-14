@@ -16,7 +16,6 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _bioController = TextEditingController();
 
   String? _imageUrl;
@@ -41,7 +40,6 @@ class _ProfilePageState extends State<ProfilePage> {
       final data = doc.data()!;
       setState(() {
         _nameController.text = data['name'] ?? '';
-        _emailController.text = data['email'] ?? user!.email!;
         _bioController.text = data['bio'] ?? '';
         _imageUrl = data['imageUrl'];
         _backgroundUrl = data['backgroundUrl'];
@@ -91,7 +89,6 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_formKey.currentState!.validate()) {
       await _firestore.collection('users').doc(user!.uid).update({
         'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
         'bio': _bioController.text.trim(),
         'imageUrl': _imageUrl,
         'backgroundUrl': _backgroundUrl,
@@ -575,25 +572,12 @@ class _ProfilePageState extends State<ProfilePage> {
                               _nameController.text.isNotEmpty ? _nameController.text : 'Tên người dùng',
                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                             ),                  
-                            Text(
-                              _emailController.text.isNotEmpty ? _emailController.text : 'mail người dùng',
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300),
-                            ),
+
                             const SizedBox(height: 8),
                       _isEditing
                           ? Column(
                               children: [
                                 const SizedBox(height: 16),
-                                _buildTextField(
-                                  controller: _emailController,
-                                  label: 'Email',
-                                  icon: Icons.email,
-                                  validator: (val) {
-                                    if (val == null || val.isEmpty) return 'Hãy nhập email';
-                                    if (!val.contains('@')) return 'Email không hợp lệ';
-                                    return null;
-                                  },
-                                ),
                                 const SizedBox(height: 16),
                                 _buildTextField(
                                   controller: _bioController,

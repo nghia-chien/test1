@@ -173,7 +173,7 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
               child: Column(
                 children: [
-                  Icon(action['icon'] as IconData, color: const Color(0xFF5B67CA), size: 28),
+                  Icon(action['icon'] as IconData, color: const Color.fromARGB(255, 228, 8, 8), size: 28),
                   const SizedBox(height: 6),
                   Text(action['label'] as String, style: const TextStyle(fontSize: 13, color: Color(0xFF2C3E50))),
                 ],
