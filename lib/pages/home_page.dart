@@ -182,7 +182,7 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
               child: Column(
                 children: [
-                  Icon(action['icon'] as IconData, color: const Color(0xFF5B67CA), size: 28),
+                  Icon(action['icon'] as IconData, color: const Color.fromARGB(255, 95, 11, 240), size: 28),
                   const SizedBox(height: 6),
                   Text(action['label'] as String, style: const TextStyle(fontSize: 13, color: Color(0xFF2C3E50))),
                 ],
@@ -216,7 +216,7 @@ Widget _buildAIStylishPrompt() {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: const Color(0xFF5B67CA).withOpacity(0.12),
+                backgroundColor: const Color.fromARGB(255, 89, 7, 241).withOpacity(0.12),
                 child: const Icon(Icons.smart_toy, color: Color(0xFF5B67CA), size: 32),
               ),
               const SizedBox(width: 18),
@@ -224,7 +224,7 @@ Widget _buildAIStylishPrompt() {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   DefaultTextStyle(
-                    style: const TextStyle(fontSize: 16, color: Colors.black),
+                    style: const TextStyle(fontSize: 16, color: Color.fromARGB(255, 25, 171, 9)),
                     child: AnimatedTextKit(
                       animatedTexts: [
                         TypewriterAnimatedText('Chào bạn đến với WHY'),
@@ -249,7 +249,7 @@ Widget _buildAIStylishPrompt() {
   Widget _buildSearchBox() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3A8EDC), width: 2),
+        border: Border.all(color: const Color.fromARGB(255, 39, 45, 211), width: 2),
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
       ),
@@ -262,14 +262,14 @@ Widget _buildAIStylishPrompt() {
               decoration: const InputDecoration(
                 hintText: "Gợi ý phong cách?",
                 border: InputBorder.none,
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: TextStyle(color: Color.fromARGB(255, 5, 165, 82)),
               ),
             ),
           ),
           Container(
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFF3A8EDC),
+              color: Color.fromARGB(255, 128, 8, 240),
             ),
             child: IconButton(
               icon: const Icon(Icons.arrow_forward, color: Colors.white),

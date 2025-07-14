@@ -28,10 +28,10 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
   bool _isPublic = true;
 
   final List<String> categories = ['Áo', 'Quần', 'Váy', 'Phụ kiện', 'Mũ'];
-  final List<String> colors = ['Đỏ', 'Xanh', 'Vàng', 'Đen', 'Trắng'];
-  final List<String> styles = ['Công sở', 'Thể thao', 'Thường ngày', 'Dự tiệc'];
-  final List<String> seasons = ['Xuân', 'Hè', 'Thu', 'Đông', 'Bốn Mùa'];
-  final List<String> occasionOptions = ['Đi làm', 'Tiệc', 'Du lịch', 'Hẹn hò'];
+  final List<String> colors = ['Đen', 'Trắng','Đỏ', 'Xanh', 'Vàng','Cam','Xanh lá','Xanh nhạt','Xanh đậm','Hồng','Be' ];
+  final List<String> styles = ['Classic','Minimalism','Hippie','Bohemian','Sporty ','Preppy','Normcore','Vintage'];
+  final List<String> seasons = ['Xuân', 'Hè', 'Thu', 'Đông', 'Tất Cả'];
+  final List<String> occasionOptions = ['Đi làm', 'Tiệc', 'Du lịch', 'Hẹn hò', 'Thường ngày'];
 
   // ------------------------------
   Future<void> _pickImage() async {

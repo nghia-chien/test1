@@ -41,7 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final data = doc.data()!;
       setState(() {
         _nameController.text = data['name'] ?? '';
-        _emailController.text = data['email'] ?? user!.email!;
+       
         _bioController.text = data['bio'] ?? '';
         _imageUrl = data['imageUrl'];
         _backgroundUrl = data['backgroundUrl'];
@@ -91,7 +91,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_formKey.currentState!.validate()) {
       await _firestore.collection('users').doc(user!.uid).update({
         'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
+    
         'bio': _bioController.text.trim(),
         'imageUrl': _imageUrl,
         'backgroundUrl': _backgroundUrl,

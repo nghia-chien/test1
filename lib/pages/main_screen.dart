@@ -113,7 +113,7 @@ class _MainScreenState extends State<MainScreen> {
               _buildSidebar(theme),
               Expanded(
                 child: Container(
-                  color: const Color(0xFFA3C7E6), // ✅ sửa từ BoxDecoration sang color đơn giản
+                  color: const Color.fromARGB(255, 163, 230, 188), // ✅ sửa từ BoxDecoration sang color đơn giản
                   child: IndexedStack(
                     index: _selectedIndex,
                     children: _pages,
@@ -127,7 +127,7 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
-                      color: Color(0xFFA3C7E6),
+                      color: Color.fromARGB(255, 19, 45, 190),
                     ),
             child: IndexedStack(
               index: _selectedIndex,
@@ -143,9 +143,9 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-              selectedItemColor: const Color.fromARGB(255, 167, 248, 63),
+              selectedItemColor: const Color.fromARGB(255, 149, 248, 63),
               unselectedItemColor: const Color.fromARGB(255, 233, 233, 233),
-              backgroundColor: const Color.fromARGB(255, 0, 70, 147),
+              backgroundColor: const Color.fromARGB(255, 87, 56, 211),
               elevation: 8,
               items: _sidebarItems.take(5).map((item) => BottomNavigationBarItem(
                     icon: Icon(item.icon),
