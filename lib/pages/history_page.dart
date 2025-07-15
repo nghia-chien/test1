@@ -3,6 +3,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../models/activity_history.dart';
 import '../services/activity_history_service.dart';
 import '../utils/responsive_helper.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
+import 'calendar_page.dart';
+import 'profile_page.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -256,6 +261,27 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
         ],
       ),
       child: ListTile(
+        onTap: () {
+          if (activity.action == 'like' || activity.action == 'comment' || activity.action == 'upload') {
+            final postId = activity.metadata?['postId'];
+            if (postId != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PostDetailPage(postId: postId)),
+              );
+            }
+          } else if (activity.action == 'calendar') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CalendarPage()),
+            );
+          } else if (activity.action == 'profile') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            );
+          }
+        },
         contentPadding: const EdgeInsets.all(16),
         leading: Container(
           width: 50,
@@ -442,60 +468,71 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
       timestamp: DateTime.now(),
     );
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+    return GestureDetector(
+      onTap: () {
+        // Khi nhấn vào loại action trong thống kê, mở danh sách các bài liên quan
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => RelatedPostsPage(action: action),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: activity.actionColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
-            child: Icon(
-              activity.actionIcon,
-              color: activity.actionColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _getFilterLabel(action),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: activity.actionColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: activity.actionColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              count.toString(),
-              style: TextStyle(
+              child: Icon(
+                activity.actionIcon,
                 color: activity.actionColor,
-                fontWeight: FontWeight.bold,
+                size: 20,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _getFilterLabel(action),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: activity.actionColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                count.toString(),
+                style: TextStyle(
+                  color: activity.actionColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -542,6 +579,99 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
             child: const Text('Xóa tất cả', style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Dummy PostDetailPage (bạn nên thay bằng trang chi tiết bài viết thực tế nếu có)
+class PostDetailPage extends StatelessWidget {
+  final String postId;
+  const PostDetailPage({required this.postId, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Chi tiết bài viết')),
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection('posts').doc(postId).get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Không tìm thấy bài viết.'));
+          }
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (data['imageBase64'] != null && data['imageBase64'].toString().isNotEmpty)
+                  Image.memory(
+                    base64Decode(data['imageBase64'].toString().split(',').last),
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
+                const SizedBox(height: 16),
+                Text(data['content'] ?? '', style: const TextStyle(fontSize: 16)),
+                const SizedBox(height: 8),
+                Text('Tác giả: ${data['username'] ?? ''}', style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// Trang danh sách các bài liên quan đến action
+class RelatedPostsPage extends StatelessWidget {
+  final String action;
+  const RelatedPostsPage({required this.action, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    return Scaffold(
+      appBar: AppBar(title: Text('Bài liên quan: ${action.toUpperCase()}')),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('activity_history')
+            .where('userId', isEqualTo: user?.uid)
+            .where('action', isEqualTo: action)
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final docs = snapshot.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return const Center(child: Text('Không có bài nào.'));
+          }
+          return ListView.builder(
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final activity = ActivityHistory.fromFirestore(docs[index]);
+              final postId = activity.metadata?['postId'];
+              return ListTile(
+                leading: Icon(activity.actionIcon, color: activity.actionColor),
+                title: Text(activity.description),
+                subtitle: Text(activity.timeAgo),
+                onTap: postId != null
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => PostDetailPage(postId: postId)),
+                        )
+                    : null,
+              );
+            },
+          );
+        },
       ),
     );
   }

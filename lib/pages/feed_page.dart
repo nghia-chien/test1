@@ -471,6 +471,42 @@ class _FeedPageState extends State<FeedPage> {
                     icon: const Icon(Icons.bookmark_border),
                     onPressed: () {},
                   ),
+                  // Nút xóa chỉ cho chủ bài đăng
+                  if (user != null && data['uid'] == user.uid)
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      tooltip: 'Xóa bài đăng',
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Xóa bài đăng'),
+                            content: const Text('Bạn có chắc muốn xóa bài này?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Hủy'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await doc.reference.delete();
+                          await ActivityHistoryService.addActivity(
+                            action: 'delete',
+                            description: 'Đã xóa bài đăng: ${content.substring(0, content.length > 30 ? 30 : content.length)}',
+                            metadata: {'postId': doc.id},
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã xóa bài đăng')),
+                          );
+                        }
+                      },
+                  ),
                 ],
               ),
             )
