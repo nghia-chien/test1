@@ -5,7 +5,9 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'dart:html' as html;
 import 'dart:typed_data';
 import 'dart:convert';
-import '../utils/responsive_helper.dart';
+import '../services/activity_history_service.dart';
+import 'outfit_detail_page.dart';
+import '../models/clothing_item.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -16,6 +18,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _bioController = TextEditingController();
 
   String? _imageUrl;
@@ -40,6 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final data = doc.data()!;
       setState(() {
         _nameController.text = data['name'] ?? '';
+       
         _bioController.text = data['bio'] ?? '';
         _imageUrl = data['imageUrl'];
         _backgroundUrl = data['backgroundUrl'];
@@ -89,10 +93,21 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_formKey.currentState!.validate()) {
       await _firestore.collection('users').doc(user!.uid).update({
         'name': _nameController.text.trim(),
+    
         'bio': _bioController.text.trim(),
         'imageUrl': _imageUrl,
         'backgroundUrl': _backgroundUrl,
       });
+
+      // Thêm activity history cho cập nhật profile
+      await ActivityHistoryService.addActivity(
+        action: 'profile',
+        description: 'Cập nhật thông tin hồ sơ',
+        metadata: {
+          'name': _nameController.text.trim(),
+          'bio': _bioController.text.trim(),
+        },
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cập nhật hồ sơ thành công!')),
@@ -200,6 +215,42 @@ class _ProfilePageState extends State<ProfilePage> {
                       icon: const Icon(Icons.bookmark_border),
                       onPressed: () {},
                     ),
+                    // Nút xóa chỉ cho chủ bài đăng
+                    if (user != null && data['uid'] == user!.uid)
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Xóa bài đăng',
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Xóa bài đăng'),
+                              content: const Text('Bạn có chắc muốn xóa bài này?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Hủy'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            await doc.reference.delete();
+                            await ActivityHistoryService.addActivity(
+                              action: 'delete',
+                              description: 'Đã xóa bài đăng:  ${content.substring(0, content.length > 30 ? 30 : content.length)}',
+                              metadata: {'postId': doc.id},
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã xóa bài đăng')),
+                            );
+                          }
+                        },
+                      ),
                   ],
                 ),
               )
@@ -216,545 +267,501 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _showCommentsDialog(DocumentSnapshot postDoc) async {
-    final user = FirebaseAuth.instance.currentUser;
-    final TextEditingController commentController = TextEditingController();
-
-    showModalBottomSheet(
+  void _showCommentsDialog(DocumentSnapshot doc) {
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.8,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 16),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Bình luận',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: postDoc.reference
-                      .collection('comments')
-                      .orderBy('createdAt', descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    final comments = snapshot.data!.docs;
-                    if (comments.isEmpty) {
-                      return const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text('Chưa có bình luận nào',
-                                style: TextStyle(fontSize: 16, color: Colors.grey)),
-                          ],
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: comments.length,
-                      itemBuilder: (context, i) {
-                        final c = comments[i];
-                        final username = c['name'] ?? c['username'] ?? 'User';
-                        final content = c['content'] ?? '';
-                        final createdAt = (c['createdAt'] as Timestamp?)?.toDate();
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundColor: Colors.grey[300],
-                                child: Text(
-                                  username[0].toUpperCase(),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          username,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        if (createdAt != null) ...[
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            _formatTime(createdAt),
-                                            style: TextStyle(
-                                                color: Colors.grey[600], fontSize: 12),
-                                          ),
-                                        ]
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(content, style: const TextStyle(fontSize: 14)),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              if (user != null)
-                Container(
-                  padding: EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 12,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: Colors.grey[200]!)),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.grey[300],
-                        child: Text(
-                          (user.email ?? 'U')[0].toUpperCase(),
-                          style:
-                              const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: commentController,
-                          decoration: InputDecoration(
-                            hintText: 'Thêm bình luận...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                            contentPadding:
-                                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          ),
-                          onSubmitted: (_) => _submitComment(
-                            commentController,
-                            postDoc,
-                            user,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                          onPressed: () => _submitComment(
-                            commentController,
-                            postDoc,
-                            user,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
+      builder: (context) => AlertDialog(
+        title: Text('Comments'),
+        content: Text('Comments dialog implementation'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Close')),
+        ],
+      ),
     );
   }
 
-  Future<void> _submitComment(TextEditingController controller, DocumentSnapshot postDoc, User user) async {
-    final content = controller.text.trim();
-    if (content.isEmpty) return;
-
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    final name = userDoc.data()?['name'] ?? user.email ?? 'User';
-
-    await postDoc.reference.collection('comments').add({
-      'uid': user.uid,
-      'name': name,
-      'content': content,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    controller.clear();
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
-    if (diff.inMinutes < 1) return 'vừa xong';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}p';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}d';
-    return '${time.day}/${time.month}/${time.year}';
-  }
-    @override
-
-    //edit profile
-    Widget build(BuildContext context) {
-      final primaryColor = const Color(0xFF3A8EDC);
-      final isWideScreen = ResponsiveHelper.isDesktop(context) || ResponsiveHelper.isTablet(context);
-
-
-      return Scaffold(
-        backgroundColor: const Color(0xFFF2F6FA),
-        body: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                Container(
-                  height: 250,
-                  decoration: _backgroundUrl != null
-                      ? BoxDecoration(
-                          image: DecorationImage(
-                            image: NetworkImage(_backgroundUrl!),
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.pink.shade300,
-                              Colors.orange.shade300,
-                              Colors.pink.shade200,
-                            ],
-                          ),
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = const Color(0xFF3A8EDC);
+    return Scaffold(
+      backgroundColor: const Color(0xFFF2F6FA),
+      body: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Container(
+                height: 250,
+                decoration: _backgroundUrl != null
+                    ? BoxDecoration(
+                        image: DecorationImage(
+                          image: NetworkImage(_backgroundUrl!),
+                          fit: BoxFit.cover,
                         ),
-                  child: Stack(
-                    children: [ if (!isWideScreen)
-                      Positioned(
-                        top: 40,
-                        left: 20,
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
+                      )
+                    : BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.pink.shade300,
+                            Colors.orange.shade300,
+                            Colors.pink.shade200,
+                          ],
                         ),
                       ),
-                      Positioned(
-                        top: 40,
-                        right: 20,
-                        child: IconButton(
-                          icon: const Icon(Icons.more_horiz, color: Colors.white),
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                              ),
-                              builder: (_) => _SettingsSheet(
-                                isEditing: _isEditing,
-                                onEdit: _toggleEdit,
-                                onSave: _saveChanges,
-                              ),
-                            );
-                          },
-                        ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 40,
+                      left: 20,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                      Positioned(
-                        bottom: 50,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: Stack(
-                            alignment: Alignment.bottomRight,
-                            children: [
-                              CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.white,
-                                child: CircleAvatar(
-                                  radius: 47,
-                                  backgroundColor: Colors.grey.shade200,
-                                  backgroundImage: _imageUrl != null ? NetworkImage(_imageUrl!) : null,
-                                  child: _imageUrl == null
-                                      ? Text(
-                                          _nameController.text.isNotEmpty
-                                              ? _nameController.text[0].toUpperCase()
-                                              : "U",
-                                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                        )
-                                      : null,
-                                ),
-                              ),
-                              if (_isEditing)
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: primaryColor,
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
-                                    onPressed: _pickImage,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (_isEditing)
-                        Positioned(
-                          top: 10,
-                          left: 10,
-                          child: IconButton(
-                            icon: const Icon(Icons.image, color: Colors.white),
-                            onPressed: _pickBackgroundImage,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Container(
-                  color: Colors.white,
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      _isEditing
-                          ? _buildTextField(
-                              controller: _nameController,
-                              label: 'Tên',
-                              icon: Icons.person,
-                              enabled: _isEditing,
-                              validator: (val) =>
-                                  val == null || val.isEmpty ? 'Hãy nhập tên' : null,
-                            )
-                          : Text(
-                              _nameController.text.isNotEmpty ? _nameController.text : 'Tên người dùng',
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                            ),                  
-
-                            const SizedBox(height: 8),
-                      _isEditing
-                          ? Column(
-                              children: [
-                                const SizedBox(height: 16),
-                                const SizedBox(height: 16),
-                                _buildTextField(
-                                  controller: _bioController,
-                                  label: 'Bio',
-                                  icon: Icons.info_outline,
-                                  maxLines: 3,
-                                ),
-                              ],
-                            )
-                          : Column(
-                              children: [
-                                Text(
-                                  _bioController.text.isNotEmpty
-                                      ? _bioController.text
-                                      : 'Long Lanh / Photographer / Model',
-                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
+                    ),
+                    Positioned(
+                      top: 40,
+                      right: 20,
+                      child: IconButton(
+                        icon: const Icon(Icons.more_horiz, color: Colors.white),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                             ),
-                    ],
-                  ),
+                            builder: (_) => _SettingsSheet(
+                              isEditing: _isEditing,
+                              onEdit: _toggleEdit,
+                              onSave: _saveChanges,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 50,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.white,
+                              child: CircleAvatar(
+                                radius: 47,
+                                backgroundColor: Colors.grey.shade200,
+                                backgroundImage: _imageUrl != null ? NetworkImage(_imageUrl!) : null,
+                                child: _imageUrl == null
+                                    ? Text(
+                                        _nameController.text.isNotEmpty
+                                            ? _nameController.text[0].toUpperCase()
+                                            : "U",
+                                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            if (_isEditing)
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: primaryColor,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                                  onPressed: _pickImage,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (_isEditing)
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: IconButton(
+                          icon: const Icon(Icons.image, color: Colors.white),
+                          onPressed: _pickBackgroundImage,
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 20),
+              ),
+              Container(
+                color: Colors.white,
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _isEditing
+                        ? _buildTextField(
+                            controller: _nameController,
+                            label: 'Tên',
+                            icon: Icons.person,
+                            enabled: _isEditing,
+                            validator: (val) =>
+                                val == null || val.isEmpty ? 'Hãy nhập tên' : null,
+                          )
+                        : Text(
+                            _nameController.text.isNotEmpty ? _nameController.text : 'Tên người dùng',
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                    const SizedBox(height: 8),
+                    _isEditing
+                        ? Column(
+                            children: [
+                              const SizedBox(height: 16),
+                              _buildTextField(
+                                controller: _emailController,
+                                label: 'Email',
+                                icon: Icons.email,
+                                validator: (val) {
+                                  if (val == null || val.isEmpty) return 'Hãy nhập email';
+                                  if (!val.contains('@')) return 'Email không hợp lệ';
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              _buildTextField(
+                                controller: _bioController,
+                                label: 'Bio',
+                                icon: Icons.info_outline,
+                                maxLines: 3,
+                              ),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              Text(
+                                _bioController.text.isNotEmpty
+                                    ? _bioController.text
+                                    : 'Long Lanh / Photographer / Model',
+                                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    _buildTabBar(),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+              _buildContentSection(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(tabs.length, (index) {
+        final label = tabs[index];
+        final isActive = selectedTabIndex == index;
+        return GestureDetector(
+          onTap: () => setState(() => selectedTabIndex = index),
+          child: Column(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: isActive ? Color(0xFF5B67CA) : Colors.black54,
+                ),
+              ),
+              if (isActive)
                 Container(
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      _buildTabBar(),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
+                  margin: const EdgeInsets.only(top: 4),
+                  height: 2,
+                  width: 24,
+                  color: Color(0xFF5B67CA),
+                )
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildContentSection() {
+    return selectedTabIndex == 0 ? _buildPostGrid('posts') : _buildPostGrid('saved_outfits');
+  }
+
+Widget _buildSavedOutfitCard(DocumentSnapshot doc) {
+  final data = doc.data() as Map<String, dynamic>?;
+
+  if (data == null || data['itemIds'] == null) {
+    return const Text("Dữ liệu outfit không hợp lệ");
+  }
+
+  final List<String> itemIds = List<String>.from(data['itemIds']);
+  final prompt = data['prompt'] ?? '';
+  final season = data['seasonFilter'] ?? '';
+  final occasion = data['occasionFilter'] ?? '';
+  final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+
+  return FutureBuilder<QuerySnapshot>(
+    future: FirebaseFirestore.instance
+        .collection('clothing_items')
+        .where(FieldPath.documentId, whereIn: itemIds)
+        .get(),
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final docs = snapshot.data!.docs;
+
+      // Convert snapshot to List<ClothingItem>
+      final outfit = docs.map((doc) {
+        final itemData = doc.data() as Map<String, dynamic>;
+        return ClothingItem(
+          id: doc.id,
+          name: itemData['name'] ?? '',
+          category: itemData['category'] ?? '',
+          color: itemData['color'] ?? '',
+          style: itemData['style'] ?? '',
+          season: itemData['season'] ?? '',
+          occasions: List<String>.from(itemData['occasions'] ?? []),
+          imageUrl: itemData['base64Image'] ?? '',
+          matchingColors: List<String>.from(data['matchingColors'] ?? []),
+        );
+      }).toList();
+
+      return InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OutfitDetailPage(
+              items: outfit,
+              prompt: prompt,
+              seasonFilter: season,
+              occasionFilter: occasion,
+            ),
+          ),
+        ),
+        child: Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Tiêu đề + nút xóa
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "${prompt.isNotEmpty ? prompt : 'Random'}",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      tooltip: "Xóa outfit này",
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text("Xóa Outfit"),
+                            content: const Text("Bạn có chắc muốn xóa outfit này?"),
+                            actions: [
+                              TextButton(
+                                child: const Text("Hủy"),
+                                onPressed: () => Navigator.pop(context, false),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text("Xóa"),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          await doc.reference.delete();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Đã xóa outfit")),
+                          );
+                        }
+                      },
+                    ),
+                  ],
                 ),
-                _buildContentSection(),
+                const SizedBox(height: 8),
+                // Ảnh
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: docs.map((itemDoc) {
+                    final itemData = itemDoc.data() as Map<String, dynamic>;
+                    final base64Image = itemData['base64Image'];
+                    Uint8List? imageBytes;
+
+                    if (base64Image != null) {
+                      try {
+                        final cleanBase64 = base64Image.split(',').last;
+                        imageBytes = base64Decode(cleanBase64);
+                      } catch (_) {}
+                    }
+
+                    return Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[200],
+                      ),
+                      child: imageBytes != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.memory(imageBytes, fit: BoxFit.cover),
+                            )
+                          : const Icon(Icons.image_not_supported),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 8),
+                Text("Mùa: $season | Dịp: ${occasion ?? 'Không rõ'}"),
+                if (createdAt != null)
+                  Text(
+                    "Lưu lúc: ${createdAt.day}/${createdAt.month}/${createdAt.year}",
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
               ],
             ),
           ),
         ),
       );
-    }
+    },
+  );
+}
 
-    Widget _buildTabBar() {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(tabs.length, (index) {
-          final label = tabs[index];
-          final isActive = selectedTabIndex == index;
-          return GestureDetector(
-            onTap: () => setState(() => selectedTabIndex = index),
+Widget _buildPostGrid(String collectionName) {
+  return StreamBuilder<QuerySnapshot>(
+    stream: _firestore
+        .collection(collectionName)
+        .where('uid', isEqualTo: user?.uid)
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      if (snapshot.hasError) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Center(
             child: Column(
               children: [
+                Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                const SizedBox(height: 16),
                 Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isActive ? Color(0xFF5B67CA) : Colors.black54,
-                  ),
+                  'Lỗi tải dữ liệu: ${snapshot.error}',
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
                 ),
-                if (isActive)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    height: 2,
-                    width: 24,
-                    color: Color(0xFF5B67CA),
-                  )
               ],
             ),
-          );
-        }),
-      );
-    }
+          ),
+        );
+      }
 
-    Widget _buildContentSection() {
-      return selectedTabIndex == 0 ? _buildPostGrid('posts') : _buildPostGrid('outfits');
-    }
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return const Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(Icons.inbox_outlined, size: 48, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Chưa có dữ liệu',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
 
-  Widget _buildPostGrid(String collectionName) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _firestore
-          .collection(collectionName)
-          .where('uid', isEqualTo: user?.uid)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(20),
-            child: Center(child: CircularProgressIndicator()),
-          );
+      final docs = snapshot.data!.docs;
+      
+      // Sort documents by timestamp if available
+      docs.sort((a, b) {
+        final aData = a.data() as Map<String, dynamic>;
+        final bData = b.data() as Map<String, dynamic>;
+        final aTime = aData['timestamp'] ?? aData['createdAt'] ?? DateTime.now();
+        final bTime = bData['timestamp'] ?? bData['createdAt'] ?? DateTime.now();
+        if (aTime is Timestamp && bTime is Timestamp) {
+          return bTime.compareTo(aTime);
         }
+        return 0;
+      });
 
-        if (snapshot.hasError) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 600;
+
           return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Lỗi tải dữ liệu: ${snapshot.error}',
-                    style: TextStyle(color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
+            padding: const EdgeInsets.all(16),
+            child: isWide
+                ? MasonryGridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      return collectionName == 'saved_outfits'
+                        ? _buildSavedOutfitCard(doc)
+                        : _buildPostCard(doc);
+                    },
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(20),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(Icons.inbox_outlined, size: 48, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'Chưa có dữ liệu',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final docs = snapshot.data!.docs;
-        
-        // Sort documents by timestamp if available
-        docs.sort((a, b) {
-          final aData = a.data() as Map<String, dynamic>;
-          final bData = b.data() as Map<String, dynamic>;
-          final aTime = aData['timestamp'] ?? aData['createdAt'] ?? DateTime.now();
-          final bTime = bData['timestamp'] ?? bData['createdAt'] ?? DateTime.now();
-          if (aTime is Timestamp && bTime is Timestamp) {
-            return bTime.compareTo(aTime);
-          }
-          return 0;
-        });
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 600;
-
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: isWide
-                  ? MasonryGridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      itemCount: docs.length,
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: docs.length,
                       itemBuilder: (context, index) {
-                        return _buildPostCard(docs[index]);
-                      },
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: docs.length,
-                      itemBuilder: (context, index) {
+                        final doc = docs[index];
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildPostCard(docs[index]),
+                          child: collectionName == 'saved_outfits'
+                            ? _buildSavedOutfitCard(doc)
+                            : _buildPostCard(doc)
                         );
                       },
-                    ),
-            );
-          },
-        );
-      },
-    );
-  }
+                      
+                  ),
+          );
+        },
+      );
+    },
+  );
+}
 
   Widget _buildTextField({
     required TextEditingController controller,

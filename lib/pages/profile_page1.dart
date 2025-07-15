@@ -103,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage1> {
     final base64Image = data['base64Image'];
     final season = data['season'] ?? '';
     final category = data['category'] ?? '';
-    final isPublic = data['public'] == true;
+
     Uint8List? imageBytes;
     if (base64Image != null) {
       final base64 = base64Image.split(',').last;
@@ -125,19 +125,7 @@ class _ProfilePageState extends State<ProfilePage1> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Mùa: $season | Loại: $category'),
-                Row(
-                  children: [
-                    Icon(
-                      isPublic ? Icons.public : Icons.lock_outline,
-                      size: 16,
-                      color: isPublic ? Colors.green : Colors.grey,
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.edit, size: 18),
-                      onPressed: () => _showEditOutfitDialog(context, doc), // ✅ đúng thứ tự
-                    ),
-                  ],
-                ),
+
               ],
             ),
           ),
@@ -250,54 +238,4 @@ class _ProfilePageState extends State<ProfilePage1> {
       },
     );
   }
-}
-void _showEditOutfitDialog(BuildContext context, DocumentSnapshot doc) {
-  final data = doc.data() as Map<String, dynamic>;
-  bool isPublic = data['public'] == true;
-
-  showDialog(
-    context: context, // ✅ giờ đã hợp lệ
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (innerContext, setStateDialog) {
-          return AlertDialog(
-            title: const Text('Chỉnh sửa trạng thái công khai'),
-            content: Row(
-              children: [
-                Switch(
-                  value: isPublic,
-                  onChanged: (val) {
-                    setStateDialog(() {
-                      isPublic = val;
-                    });
-                  },
-                ),
-                Text(isPublic ? 'Công khai' : 'Chỉ mình tôi'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Hủy'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await doc.reference.update({'public': isPublic});
-                    Navigator.pop(dialogContext);
-                  } catch (e) {
-                    Navigator.pop(dialogContext);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Lỗi khi cập nhật trạng thái!')),
-                    );
-                  }
-                },
-                child: const Text('Lưu'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
 }

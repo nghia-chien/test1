@@ -4,13 +4,12 @@ class ClothingItem {
   final String id;
   final String name;
   final String category;
-  final String imageUrl;        // sẽ đọc từ base64Image
+  final String imageUrl; // chứa base64Image
   final String color;
-  final List<String> matchingColors; // optional, có thể để []
+  final List<String> matchingColors;
   final String style;
   final String season;
   final List<String> occasions;
-        // optional nếu không có trong Firestore
 
   ClothingItem({
     required this.id,
@@ -22,21 +21,34 @@ class ClothingItem {
     required this.style,
     required this.season,
     required this.occasions,
-
   });
 
+  /// ✅ Parse từ Firestore snapshot
   factory ClothingItem.fromFirestore(String id, Map<String, dynamic> data) {
-  return ClothingItem(
-    id: id,
-    name: data['name'] ?? '',
-    category: data['category'] ?? '',
-    imageUrl: data['base64Image'] ?? '',
-    color: data['color'] ?? '',
-    matchingColors: [], // hoặc parse nếu bạn lưu trong Firestore
-    style: data['style'] ?? '',
-    season: data['season'] ?? '',
-    occasions: List<String>.from(data['occasions'] ?? []),
+    return ClothingItem(
+      id: id,
+      name: data['name'] ?? '',
+      category: data['category'] ?? '',
+      imageUrl: data['base64Image'] ?? '',
+      color: data['color'] ?? '',
+      matchingColors: List<String>.from(data['matchingColors'] ?? []),
+      style: data['style'] ?? '',
+      season: data['season'] ?? '',
+      occasions: List<String>.from(data['occasions'] ?? []),
+    );
+  }
 
-  );
-}
+  /// ✅ Chuyển sang Map để upload lên Firestore nếu cần
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'category': category,
+      'base64Image': imageUrl,
+      'color': color,
+      'matchingColors': matchingColors,
+      'style': style,
+      'season': season,
+      'occasions': occasions,
+    };
+  }
 }

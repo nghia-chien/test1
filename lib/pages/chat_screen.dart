@@ -5,6 +5,7 @@ import '../services/chat_service.dart';
 import '../models/chat_message.dart';
 import 'home_page.dart';
 import 'package:flutter/services.dart';
+import '../services/activity_history_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? weatherDescription;
@@ -47,6 +48,15 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isLoading = true);
 
     await _chatService.sendMessage(trimmed);
+
+    // Thêm activity history cho chat
+    await ActivityHistoryService.addActivity(
+      action: 'chat',
+      description: 'Chat với AI: ${trimmed.substring(0, trimmed.length > 50 ? 50 : trimmed.length)}...',
+      metadata: {
+        'message': trimmed,
+      },
+    );
 
     setState(() => _isLoading = false);
     _scrollToBottom();

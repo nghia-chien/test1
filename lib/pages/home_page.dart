@@ -11,6 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'calendar_page.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import '../utils/responsive_helper.dart';
+import 'history_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -166,6 +167,11 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const UploadClothingPage()),
+                );
+              } else if (action['icon'] == Icons.history) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HistoryPage()),
                 );
               }
             },

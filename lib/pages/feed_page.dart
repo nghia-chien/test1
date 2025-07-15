@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../services/activity_history_service.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -54,7 +55,7 @@ class _FeedPageState extends State<FeedPage> {
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final name = userDoc.data()?['name'] ?? user.email ?? 'Người dùng';
 
-    await FirebaseFirestore.instance.collection('posts').add({
+    final postRef = await FirebaseFirestore.instance.collection('posts').add({
       'uid': user.uid,
       'username': name,
       'content': content,
@@ -62,6 +63,18 @@ class _FeedPageState extends State<FeedPage> {
       'createdAt': FieldValue.serverTimestamp(),
       'likes': [],
     });
+
+    // Thêm activity history
+    await ActivityHistoryService.addActivity(
+      action: 'upload',
+      description: content.isNotEmpty ? 'Đăng bài: ${content.substring(0, content.length > 50 ? 50 : content.length)}...' : 'Đăng ảnh mới',
+      imageUrl: _base64Image,
+      metadata: {
+        'postId': postRef.id,
+        'content': content,
+        'hasImage': _base64Image != null,
+      },
+    );
 
     setState(() {
       _postController.clear();
@@ -286,6 +299,9 @@ class _FeedPageState extends State<FeedPage> {
     
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final name = userDoc.data()?['name'] ?? user.email ?? 'User';
+    
+    final postData = postDoc.data() as Map<String, dynamic>;
+    final postUsername = postData['username'] ?? 'Người dùng';
 
     await postDoc.reference.collection('comments').add({
       'uid': user.uid,
@@ -293,6 +309,17 @@ class _FeedPageState extends State<FeedPage> {
       'content': content,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    // Thêm activity history cho comment
+    await ActivityHistoryService.addActivity(
+      action: 'comment',
+      description: 'Bình luận bài viết của $postUsername: ${content.substring(0, content.length > 30 ? 30 : content.length)}...',
+      metadata: {
+        'postId': postDoc.id,
+        'comment': content,
+        'postUsername': postUsername,
+      },
+    );
 
     controller.clear();
   }
@@ -394,10 +421,33 @@ class _FeedPageState extends State<FeedPage> {
                     onPressed: () async {
                       if (user == null) return;
                       final postRef = doc.reference;
+                      final data = doc.data() as Map<String, dynamic>;
+                      final username = data['username'] ?? 'Người dùng';
+                      
                       if (isLiked) {
                         await postRef.update({'likes': FieldValue.arrayRemove([user.uid])});
+                        // Thêm activity history cho unlike
+                        await ActivityHistoryService.addActivity(
+                          action: 'like',
+                          description: 'Bỏ thích bài viết của $username',
+                          metadata: {
+                            'postId': doc.id,
+                            'action': 'unlike',
+                            'username': username,
+                          },
+                        );
                       } else {
                         await postRef.update({'likes': FieldValue.arrayUnion([user.uid])});
+                        // Thêm activity history cho like
+                        await ActivityHistoryService.addActivity(
+                          action: 'like',
+                          description: 'Thích bài viết của $username',
+                          metadata: {
+                            'postId': doc.id,
+                            'action': 'like',
+                            'username': username,
+                          },
+                        );
                       }
                     },
                   ),
@@ -421,6 +471,7 @@ class _FeedPageState extends State<FeedPage> {
                     icon: const Icon(Icons.bookmark_border),
                     onPressed: () {},
                   ),
+                  // Nút xóa chỉ cho chủ bài đăng (đã bị loại bỏ khỏi feed)
                 ],
               ),
             )
@@ -595,8 +646,10 @@ class _FeedPageState extends State<FeedPage> {
                         const Spacer(),
                         TextButton(
                           onPressed: _isPosting ? null : () async {
+                            setModalState(() { _isPosting = true; });
                             await _submitPost();
                             if (mounted) Navigator.pop(context);
+                            setModalState(() { _isPosting = false; });
                           },
                           child: _isPosting
                               ? const SizedBox(
