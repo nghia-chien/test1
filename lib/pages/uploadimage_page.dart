@@ -3,6 +3,7 @@ import 'dart:html' as html;
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/activity_history_service.dart';
 
 class UploadClothingPage extends StatefulWidget {
   const UploadClothingPage({super.key});
@@ -78,7 +79,7 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw 'Người dùng chưa đăng nhập';
-      await FirebaseFirestore.instance.collection('clothing_items').add({
+      final itemRef = await FirebaseFirestore.instance.collection('clothing_items').add({
         'uid': user.uid,
         'name': _nameController.text.trim(),
         'category': _selectedCategory,
@@ -90,6 +91,21 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
         'uploaded_at': Timestamp.now(),
         'public': _isPublic,
       });
+
+      // Thêm activity history cho upload clothing
+      await ActivityHistoryService.addActivity(
+        action: 'upload',
+        description: 'Tải lên trang phục: ${_nameController.text.trim()}',
+        imageUrl: _base64Image,
+        metadata: {
+          'itemId': itemRef.id,
+          'category': _selectedCategory,
+          'color': colorToSave,
+          'style': styleToSave,
+          'season': _selectedSeason,
+          'public': _isPublic,
+        },
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tải lên thành công!')),
       );

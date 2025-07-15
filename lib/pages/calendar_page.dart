@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/activity_history_service.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -273,12 +274,29 @@ class _CalendarPageState extends State<CalendarPage> {
             child: const Text('Hủy'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // TODO: Lưu sự kiện vào database
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đã thêm sự kiện')),
-              );
+            onPressed: () async {
+              final title = titleController.text.trim();
+              final time = timeController.text.trim();
+              
+              if (title.isNotEmpty && time.isNotEmpty) {
+                // TODO: Lưu sự kiện vào database
+                
+                // Thêm activity history
+                await ActivityHistoryService.addActivity(
+                  action: 'calendar',
+                  description: 'Thêm sự kiện: $title lúc $time',
+                  metadata: {
+                    'title': title,
+                    'time': time,
+                    'date': '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                  },
+                );
+                
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Đã thêm sự kiện')),
+                );
+              }
             },
             child: const Text('Thêm'),
           ),

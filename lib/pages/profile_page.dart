@@ -5,6 +5,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'dart:html' as html;
 import 'dart:typed_data';
 import 'dart:convert';
+import '../services/activity_history_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -96,6 +97,16 @@ class _ProfilePageState extends State<ProfilePage> {
         'imageUrl': _imageUrl,
         'backgroundUrl': _backgroundUrl,
       });
+
+      // Thêm activity history cho cập nhật profile
+      await ActivityHistoryService.addActivity(
+        action: 'profile',
+        description: 'Cập nhật thông tin hồ sơ',
+        metadata: {
+          'name': _nameController.text.trim(),
+          'bio': _bioController.text.trim(),
+        },
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cập nhật hồ sơ thành công!')),
