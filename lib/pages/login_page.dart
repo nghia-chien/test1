@@ -518,6 +518,25 @@ class _LoginPageState extends State<LoginPage> {
                           child: const Text('Login nhanh (debug)'),
                         ),
                       ),
+                      if (kDebugMode)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await FirebaseAuth.instance.signInWithEmailAndPassword(
+                              email: 'dokhanguyen12a4cl2021@gmail.com',
+                              password: '123456',
+                            );
+                            if (mounted) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => const MainScreen()),
+                              );
+                            }
+                          },
+                          child: const Text('Login nhanh (debug)'),
+                        ),
+                      ),
                   ],
                 ),
               ),

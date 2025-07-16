@@ -13,11 +13,12 @@ class ChatScreen extends StatefulWidget {
   final String? initialQuery;
 
   const ChatScreen({
-    Key? key,
+    super.key,
     this.weatherDescription,
     this.temperature,
     this.initialQuery,
-  }) : super(key: key);
+  });
+
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -105,7 +106,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white.withValues(alpha: 38.25),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(

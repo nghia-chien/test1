@@ -169,7 +169,7 @@ class _QuestionPageState extends State<QuestionPage> {
             width: 24,
             height: 3,
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.3),
+              color: Theme.of(context).primaryColor.withAlpha((0.3 * 255).round()),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -317,7 +317,7 @@ class _QuestionPageState extends State<QuestionPage> {
                         width: isSelected ? 2 : 1,
                       ),
                       borderRadius: BorderRadius.circular(12),
-                      color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
+                      color: isSelected ? Theme.of(context).primaryColor.withAlpha((0.1 * 255).round()) : null,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,

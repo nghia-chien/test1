@@ -426,7 +426,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withAlpha((0.1 * 255).round()),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 30),
@@ -486,7 +486,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withAlpha((0.05 * 255).round()),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -520,7 +520,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: activity.actionColor.withOpacity(0.1),
+                color: activity.actionColor.withAlpha((0.1 * 255).round()),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

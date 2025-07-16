@@ -13,63 +13,21 @@ class NotificationPanel extends StatefulWidget {
 class _NotificationPanelState extends State<NotificationPanel> {
   bool isDarkMode = false;
 
-  Future<List<Map<String, dynamic>>> fetchNotifications() async {
+  Stream<QuerySnapshot> getNotificationStream() {
     final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return [];
+    if (currentUser == null) return const Stream.empty();
 
-    final List<Map<String, dynamic>> notifications = [];
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .where('ownerId', isEqualTo: currentUser.uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
 
-    final postSnapshots = await FirebaseFirestore.instance
-        .collection('posts')
-        .where('uid', isEqualTo: currentUser.uid)
-        .get();
-
-    for (var post in postSnapshots.docs) {
-      final postData = post.data();
-      final postContent = postData['content'] ?? '';
-      final likes = List<String>.from(postData['likes'] ?? []);
-
-      for (final likerUid in likes) {
-        if (likerUid != currentUser.uid) {
-          final userDoc =
-              await FirebaseFirestore.instance.collection('users').doc(likerUid).get();
-          final name = userDoc.data()?['name'] ?? 'Người dùng';
-
-          notifications.add({
-            'type': 'like',
-            'senderName': name,
-            'postContent': postContent,
-            'createdAt': postData['createdAt'],
-          });
-        }
-      }
-
-      final commentSnapshots = await post.reference
-          .collection('comments')
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      for (var comment in commentSnapshots.docs) {
-        final commentData = comment.data();
-        if (commentData['uid'] != currentUser.uid) {
-          notifications.add({
-            'type': 'comment',
-            'senderName': commentData['name'] ?? 'Người dùng',
-            'commentContent': commentData['content'] ?? '',
-            'postContent': postContent,
-            'createdAt': commentData['createdAt'],
-          });
-        }
-      }
-    }
-
-    notifications.sort((a, b) {
-      final aTime = (a['createdAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
-      final bTime = (b['createdAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
-      return bTime.compareTo(aTime);
-    });
-
-    return notifications;
+  Future<void> markAsRead(DocumentSnapshot doc) async {
+    final data = doc.data() as Map<String, dynamic>;
+    if (data['isRead'] == true) return;
+    await doc.reference.update({'isRead': true});
   }
 
   @override
@@ -111,8 +69,8 @@ class _NotificationPanelState extends State<NotificationPanel> {
           constraints: const BoxConstraints(maxWidth: 600),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: fetchNotifications(),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: getNotificationStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return ListView.builder(
@@ -128,9 +86,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
                   );
                 }
 
-                final notifications = snapshot.data ?? [];
-
-                if (notifications.isEmpty) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -162,76 +118,101 @@ class _NotificationPanelState extends State<NotificationPanel> {
                   );
                 }
 
+                final notifications = snapshot.data!.docs;
+
                 return ListView.separated(
                   itemCount: notifications.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final notif = notifications[index];
-                    final isLike = notif['type'] == 'like';
-                    final sender = notif['senderName'];
-                    final content = notif['postContent'];
-                    final comment = notif['commentContent'];
-                    final createdAt = (notif['createdAt'] as Timestamp?)?.toDate();
+                    final doc = notifications[index];
+                    final data = doc.data() as Map<String, dynamic>;
+                    final isLike = data['type'] == 'like';
+                    final sender = data['senderName'] ?? 'Người dùng';
+                    final content = data['postContent'] ?? '';
+                    final comment = data['commentContent'] ?? '';
+                    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+                    final isRead = data['isRead'] == true;
+
                     final formattedDate = createdAt != null
                         ? '${createdAt.day}/${createdAt.month}/${createdAt.year}'
                         : '';
 
-                    return Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.shade300,
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    return GestureDetector(
+                      onTap: () => markAsRead(doc),
+                      child: Stack(
                         children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.blue[100],
-                            child: Icon(
-                              isLike ? Icons.favorite : Icons.comment,
-                              color: Colors.blueAccent,
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.shade300,
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
+                            child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  isLike
-                                      ? '$sender đã thả tim bài viết'
-                                      : '$sender đã bình luận:',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: textColor,
+                                CircleAvatar(
+                                  backgroundColor: Colors.blue[100],
+                                  child: Icon(
+                                    isLike ? Icons.favorite : Icons.comment,
+                                    color: Colors.blueAccent,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                if (!isLike)
-                                  Text(
-                                    '"$comment"',
-                                    style: TextStyle(fontSize: 13, color: textColor),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        isLike
+                                            ? '$sender đã thả tim bài viết'
+                                            : '$sender đã bình luận:',
+                                        style: TextStyle(
+                                          fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                                          fontSize: 14,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      if (!isLike)
+                                        Text(
+                                          '"$comment"',
+                                          style: TextStyle(fontSize: 13, color: textColor),
+                                        ),
+                                      Text(
+                                        '"$content"',
+                                        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        formattedDate,
+                                        style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                                      ),
+                                    ],
                                   ),
-                                Text(
-                                  '"$content"',
-                                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  formattedDate,
-                                  style: TextStyle(fontSize: 11, color: Colors.grey[400]),
                                 ),
                               ],
                             ),
                           ),
+                          if (!isRead)
+                            Positioned(
+                              right: 10,
+                              top: 10,
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     );

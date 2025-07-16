@@ -86,7 +86,7 @@ class _AiMixPageState extends State<AiMixPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading items: $e');
+      //print('Error loading items: $e');
       setState(() => _isLoading = false);
       _showErrorSnackBar('Lỗi khi tải dữ liệu. Vui lòng thử lại.');
     }
@@ -371,7 +371,7 @@ class _AiMixPageState extends State<AiMixPage> {
       if (dataUrl.isEmpty) return Uint8List(0);
       return base64Decode(dataUrl.split(',').last);
     } catch (e) {
-      print('Error decoding image: $e');
+      //print('Error decoding image: $e');
       return Uint8List(0);
     }
   }
@@ -394,7 +394,6 @@ class _AiMixPageState extends State<AiMixPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = ResponsiveHelper.isTablet(context) || ResponsiveHelper.isDesktop(context);
     final crossAxisCount = ResponsiveHelper.getCrossAxisCount(context);
 
     return Scaffold(
@@ -614,7 +613,7 @@ class _AiMixPageState extends State<AiMixPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 13),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -637,7 +636,11 @@ class _AiMixPageState extends State<AiMixPage> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.bookmark_border, size: 20),
+                    icon: Icon(
+                    isSaved ? Icons.bookmark : Icons.bookmark_border,
+                    size: 20,
+                  ),
+
                     color: Colors.grey[600],
                     onPressed: () => _saveOutfit(outfit),
                   ),

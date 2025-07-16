@@ -6,7 +6,6 @@ import 'closet_page.dart';
 import 'ai_mix_page.dart';
 import 'notification.dart';
 import 'profile_page2.dart';
-import 'profile_page1.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -119,22 +118,53 @@ class _MainScreenState extends State<MainScreen> {
     final isWideScreen = ResponsiveHelper.isDesktop(context) || ResponsiveHelper.isTablet(context);
 
     return Scaffold(
-      appBar: isWideScreen ? null : AppBar(
+      appBar: isWideScreen
+    ? null
+    : AppBar(
         backgroundColor: const Color(0xFFECF0F1),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.black),
-            onPressed: _showNotifications,
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('notifications')
+                .where('ownerId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                .where('isRead', isEqualTo: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final hasUnread = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications, color: Colors.black),
+                    onPressed: _showNotifications,
+                  ),
+                  if (hasUnread)
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.person_outline, color: Colors.black),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage1()));
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
             },
           ),
         ],
       ),
+
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body: isWideScreen
         ? Row(
@@ -193,7 +223,7 @@ class _MainScreenState extends State<MainScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha((0.05 * 255).round()),
             blurRadius: 10,
             offset: const Offset(2, 0),
           ),
@@ -313,7 +343,7 @@ class _MainScreenState extends State<MainScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? const Color.fromARGB(255, 0, 0, 0).withOpacity(0.1) : Colors.transparent,
+              color: isSelected ? const Color.fromARGB(255, 0, 0, 0).withAlpha((0.1 * 255).round()) : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

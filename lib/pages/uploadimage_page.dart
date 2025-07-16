@@ -170,7 +170,6 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
   // ------------------------------
   @override
   Widget build(BuildContext context) {
-    final colorOptions = [...colors, 'Khác...'];
     final styleOptions = [...styles, 'Khác...'];
     return Scaffold(
       appBar: AppBar(title: const Text('Tải ảnh & thông tin trang phục')),

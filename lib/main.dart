@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     show GlobalMaterialLocalizations, GlobalWidgetsLocalizations, GlobalCupertinoLocalizations;
 
-
 import 'firebase_options.dart';
 import 'pages/login_page.dart';
 import 'pages/main_screen.dart';

@@ -1,5 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 
+
 class LocationService {
   static Future<Position?> getCurrentPosition() async {
     bool serviceEnabled;
@@ -24,9 +25,13 @@ class LocationService {
       return Future.error('Location permissions are permanently denied');
     }
 
-    // Nếu đã có quyền, lấy vị trí hiện tại
+// ✅ Sử dụng LocationSettings mới thay cho desiredAccuracy
+    final locationSettings = const LocationSettings(
+      accuracy: LocationAccuracy.high,
+    );
+
     return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+      locationSettings: locationSettings,
     );
   }
 }

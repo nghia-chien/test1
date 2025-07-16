@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
 import 'uploadimage_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ClosetPage extends StatefulWidget {
   const ClosetPage({super.key});
@@ -31,6 +32,11 @@ class _ClosetPageState extends State<ClosetPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      return const Center(child: Text('Vui lòng đăng nhập'));
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFE7ECEF),
@@ -81,6 +87,7 @@ class _ClosetPageState extends State<ClosetPage> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('clothing_items')
+                  .where('uid', isEqualTo: uid)
                   .orderBy('uploaded_at', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {

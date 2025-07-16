@@ -5,13 +5,14 @@ import '../services/location_service.dart';
 import '../services/weather_service.dart';
 import 'chat_screen.dart';
 import 'notification.dart';
-import 'profile_page1.dart';
 import 'uploadimage_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'calendar_page.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import '../utils/responsive_helper.dart';
 import 'history_page.dart';
+import 'dart:typed_data';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,12 +30,6 @@ class _HomePageState extends State<HomePage> {
   String? _userName;
   final TextEditingController _searchController = TextEditingController();
 
-  final List<String> outfitImagePaths = [
-    'lib/images/feed/autumn_essentials.jpg',
-    'lib/images/feed/summer_vibe.jpg',
-    'lib/images/feed/timeless_elegance.jpg',
-    'lib/images/feed/urban_street.jpg',
-  ];
 
   List<AnimatedText> _generateAnimatedTexts() {
     final name = _userName ?? 'bạn';
@@ -212,7 +207,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: const Color(0xFF5B67CA).withOpacity(0.12),
+                backgroundColor: const Color(0xFF5B67CA).withAlpha((0.12 * 255).round()),
                 child: const Icon(Icons.smart_toy, color: Color(0xFF5B67CA), size: 32),
               ),
               const SizedBox(width: 18),
@@ -311,15 +306,48 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecentOutfits() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      return const Text('Vui lòng đăng nhập');
+    }
+
     double height = ResponsiveHelper.isMobile(context) ? 70 : 100;
+    int imageCount = ResponsiveHelper.isMobile(context) ? 6 : 10;
+
     return SizedBox(
       height: height,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: outfitImagePaths.map((url) => _recentOutfitImg(url, height)).toList(),
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('clothing_items')
+            .where('uid', isEqualTo: uid)
+            .orderBy('uploaded_at', descending: true)
+            .limit(imageCount)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Bạn chưa thêm món đồ nào'));
+          }
+
+          final items = snapshot.data!.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data['base64Image'] ?? data['imageUrl'] ?? '';
+          }).where((url) => url.isNotEmpty).toList();
+
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return _recentOutfitImg(items[index], height);
+            },
+          );
+        },
       ),
     );
   }
+
 
   Widget _recentOutfitImg(String url, double size) {
     return Container(
@@ -328,11 +356,27 @@ class _HomePageState extends State<HomePage> {
       height: size,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: CachedNetworkImage(
-          imageUrl: url,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+        child: Builder(
+          builder: (context) {
+            if (url.startsWith('data:image')) {
+              try {
+                final uriData = Uri.parse(url).data;
+                if (uriData == null) return const Icon(Icons.broken_image);
+                final bytes = uriData.contentAsBytes();
+                return Image.memory(bytes, fit: BoxFit.cover);
+              } catch (e) {
+                return const Icon(Icons.broken_image);
+              }
+            } else {
+              return Image.network(
+                url,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) =>
+                    progress == null ? child : const Center(child: CircularProgressIndicator()),
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+              );
+            }
+          },
         ),
       ),
     );

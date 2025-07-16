@@ -8,6 +8,7 @@ import 'dart:convert';
 import '../services/activity_history_service.dart';
 import 'outfit_detail_page.dart';
 import '../models/clothing_item.dart';
+import 'login_page.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -814,10 +815,18 @@ class _SettingsSheet extends StatelessWidget {
             Navigator.pop(context);
             isEditing ? onSave() : onEdit();
           }),
-          _settingTile(Icons.logout, "Logout", () {
-            Navigator.pop(context);
-            FirebaseAuth.instance.signOut();
+          _settingTile(Icons.logout, "Logout", () async {
+            Navigator.pop(context); // đóng popup
+
+            await FirebaseAuth.instance.signOut();
+
+            // Xoá navigation stack và quay về LoginPage (ví dụ)
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginPage()), // thay bằng trang đăng nhập của bạn
+              (Route<dynamic> route) => false,
+            );
           }),
+
         ],
       ),
     );

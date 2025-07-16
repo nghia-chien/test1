@@ -246,7 +246,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withAlpha((0.1 * 255).round()),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),

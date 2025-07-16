@@ -7,6 +7,8 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../services/activity_history_service.dart';
+import '../services/notification_service.dart';
+
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -46,12 +48,16 @@ class _FeedPageState extends State<FeedPage> {
     }
   }
 
-  Future<void> _submitPost() async {
-    final user = FirebaseAuth.instance.currentUser;
-    final content = _postController.text.trim();
-    if (user == null || (content.isEmpty && _base64Image == null)) return;
-    setState(() => _isPosting = true);
+Future<void> _submitPost() async {
 
+  final user = FirebaseAuth.instance.currentUser;
+  final content = _postController.text.trim();
+
+  if (user == null || (content.isEmpty && _base64Image == null)) return;
+
+  setState(() => _isPosting = true);
+
+  try {
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final name = userDoc.data()?['name'] ?? user.email ?? 'Người dùng';
 
@@ -64,10 +70,12 @@ class _FeedPageState extends State<FeedPage> {
       'likes': [],
     });
 
-    // Thêm activity history
+    // Lưu lịch sử hoạt động
     await ActivityHistoryService.addActivity(
       action: 'upload',
-      description: content.isNotEmpty ? 'Đăng bài: ${content.substring(0, content.length > 50 ? 50 : content.length)}...' : 'Đăng ảnh mới',
+      description: content.isNotEmpty
+          ? 'Đăng bài: ${content.length > 50 ? content.substring(0, 50) + '...' : content}'
+          : 'Đăng ảnh mới',
       imageUrl: _base64Image,
       metadata: {
         'postId': postRef.id,
@@ -76,12 +84,24 @@ class _FeedPageState extends State<FeedPage> {
       },
     );
 
+    // Reset form
     setState(() {
       _postController.clear();
       _base64Image = null;
-      _isPosting = false;
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Bài viết đã được đăng")),
+    );
+  } catch (e) {
+    debugPrint('Lỗi đăng bài: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Đã xảy ra lỗi khi đăng bài")),
+    );
+  } finally {
+    setState(() => _isPosting = false);
   }
+}
 
   Future<void> _showCommentsDialog(DocumentSnapshot postDoc) async {
     final user = FirebaseAuth.instance.currentUser;
@@ -293,36 +313,51 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  Future<void> _submitComment(TextEditingController controller, DocumentSnapshot postDoc, User user) async {
-    final content = controller.text.trim();
-    if (content.isEmpty) return;
-    
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    final name = userDoc.data()?['name'] ?? user.email ?? 'User';
-    
-    final postData = postDoc.data() as Map<String, dynamic>;
-    final postUsername = postData['username'] ?? 'Người dùng';
+Future<void> _submitComment(TextEditingController controller, DocumentSnapshot postDoc, User user) async {
+  final content = controller.text.trim();
+  if (content.isEmpty) return;
 
-    await postDoc.reference.collection('comments').add({
-      'uid': user.uid,
-      'name': name,
-      'content': content,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+  final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+  final name = userDoc.data()?['name'] ?? user.email ?? 'User';
 
-    // Thêm activity history cho comment
-    await ActivityHistoryService.addActivity(
-      action: 'comment',
-      description: 'Bình luận bài viết của $postUsername: ${content.substring(0, content.length > 30 ? 30 : content.length)}...',
-      metadata: {
-        'postId': postDoc.id,
-        'comment': content,
-        'postUsername': postUsername,
-      },
+  final postData = postDoc.data() as Map<String, dynamic>;
+  final postUsername = postData['username'] ?? 'Người dùng';
+  final postOwnerId = postData['uid'] ?? '';
+  final postContent = postData['content'] ?? '';
+
+  await postDoc.reference.collection('comments').add({
+    'uid': user.uid,
+    'name': name,
+    'content': content,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+
+  // Thêm activity history
+  await ActivityHistoryService.addActivity(
+    action: 'comment',
+    description: 'Bình luận bài viết của $postUsername: ${content.length > 30 ? content.substring(0, 30) + '...' : content}',
+    metadata: {
+      'postId': postDoc.id,
+      'comment': content,
+      'postUsername': postUsername,
+    },
+  );
+
+  // 🔔 Gửi thông báo cho chủ bài viết
+  if (user.uid != postOwnerId) {
+    await NotificationService.sendCommentNotification(
+      ownerId: postOwnerId,
+      senderId: user.uid,
+      senderName: name,
+      postId: postDoc.id,
+      postContent: postContent,
+      commentContent: content,
     );
-
-    controller.clear();
   }
+
+  controller.clear();
+}
+
 
   String _formatTime(DateTime time) {
     final now = DateTime.now();
@@ -423,30 +458,21 @@ class _FeedPageState extends State<FeedPage> {
                       final postRef = doc.reference;
                       final data = doc.data() as Map<String, dynamic>;
                       final username = data['username'] ?? 'Người dùng';
-                      
+                      final ownerId = data['uid'] ?? ''; // Người tạo bài post
+                      final postContent = data['content'] ?? '';
+
                       if (isLiked) {
                         await postRef.update({'likes': FieldValue.arrayRemove([user.uid])});
-                        // Thêm activity history cho unlike
-                        await ActivityHistoryService.addActivity(
-                          action: 'like',
-                          description: 'Bỏ thích bài viết của $username',
-                          metadata: {
-                            'postId': doc.id,
-                            'action': 'unlike',
-                            'username': username,
-                          },
-                        );
                       } else {
                         await postRef.update({'likes': FieldValue.arrayUnion([user.uid])});
-                        // Thêm activity history cho like
-                        await ActivityHistoryService.addActivity(
-                          action: 'like',
-                          description: 'Thích bài viết của $username',
-                          metadata: {
-                            'postId': doc.id,
-                            'action': 'like',
-                            'username': username,
-                          },
+
+                        // 🔔 Gửi thông báo like
+                        await NotificationService.sendLikeNotification(
+                          ownerId: ownerId,
+                          senderId: user.uid,
+                          senderName: user.displayName ?? username,
+                          postId: doc.id,
+                          postContent: postContent,
                         );
                       }
                     },

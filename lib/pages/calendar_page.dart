@@ -66,7 +66,7 @@ class _CalendarPageState extends State<CalendarPage> {
         .collection('saved_outfits')
         .where('uid', isEqualTo: uid)
         .get();
-
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) {
@@ -238,7 +238,7 @@ class _CalendarPageState extends State<CalendarPage> {
           onTap: () async {
             final dateKey = DateFormat('yyyy-MM-dd').format(_selectedDay!);
             final uid = FirebaseAuth.instance.currentUser?.uid;
-
+            if (!mounted) return;
             await FirebaseFirestore.instance
                 .collection('calendar_outfits')
                 .doc(dateKey)
@@ -247,7 +247,7 @@ class _CalendarPageState extends State<CalendarPage> {
               'uid': uid,
               'date': dateKey,
             });
-
+            
             Navigator.pop(context);
             await loadCalendarDataFromFirestore();
           },
@@ -259,7 +259,7 @@ class _CalendarPageState extends State<CalendarPage> {
               border: Border.all(color: Colors.grey.shade200),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 13),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -816,7 +816,7 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
               border: Border.all(color: Colors.grey.shade200),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 13),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
