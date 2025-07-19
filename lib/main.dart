@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'
-    show GlobalMaterialLocalizations, GlobalWidgetsLocalizations, GlobalCupertinoLocalizations;
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 
 import 'firebase_options.dart';
@@ -26,7 +25,7 @@ class MyApp extends StatelessWidget {
    Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Montserrat'),
+      theme: ThemeData(fontFamily: 'BeautiqueDisplay'),
       locale: const Locale('vi', 'VN'), // <-- ngôn ngữ tiếng Việt
       supportedLocales: const [
         Locale('vi', 'VN'),
@@ -81,6 +80,25 @@ class AuthGate extends StatelessWidget {
 
         return const LoginPage();
       },
+    );
+  }
+}
+
+const Color kPrimaryBlue = Color(0xFF2196F3);
+
+class AppLoading extends StatelessWidget {
+  const AppLoading({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(kPrimaryBlue),
+        ),
+      ),
     );
   }
 }

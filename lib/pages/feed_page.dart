@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../services/activity_history_service.dart';
+import '../constants/constants.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -502,14 +503,14 @@ class _FeedPageState extends State<FeedPage> {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Constants.pureWhite,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Constants.pureWhite,
         elevation: 0,
         title: const Text(
           'Feed',
           style: TextStyle(
-            color: Colors.black,
+            color: Constants.darkBlueGrey,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -518,7 +519,7 @@ class _FeedPageState extends State<FeedPage> {
         actions: [
           if (user != null)
             IconButton(
-              icon: const Icon(Icons.add, color: Colors.black),
+              icon: const Icon(Icons.add, color: Constants.darkBlueGrey),
               onPressed: () => _showCreatePostDialog(),
             ),
         ],
@@ -527,13 +528,13 @@ class _FeedPageState extends State<FeedPage> {
         children: [
           // Search bar
           Container(
-            color: Colors.white,
+            color: Constants.pureWhite,
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Tìm kiếm...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                prefixIcon: const Icon(Icons.search, color: Constants.secondaryGrey),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -546,7 +547,7 @@ class _FeedPageState extends State<FeedPage> {
                       )
                     : null,
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: Constants.secondaryGrey.withOpacity(0.1),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
@@ -584,11 +585,11 @@ class _FeedPageState extends State<FeedPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.photo_library_outlined, size: 64, color: Colors.grey),
+                        Icon(Icons.photo_library_outlined, size: 64, color: Constants.secondaryGrey),
                         SizedBox(height: 16),
                         Text(
                           'Chưa có bài viết nào',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                          style: TextStyle(fontSize: 16, color: Constants.secondaryGrey),
                         ),
                       ],
                     ),

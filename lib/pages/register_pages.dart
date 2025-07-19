@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -23,6 +24,13 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _agreeToTerms = false;
   String? _errorMessage;
   String? _successMessage;
+
+  static const Color primaryBlue = Constants.primaryBlue; // Màu xanh chủ đạo đồng bộ
+  static const Color darkBlue = Constants.primaryBlue; // Màu xanh đậm đồng bộ
+  static const Color lightBlue = Color(0xFFB6D2FF); // Màu xanh nhạt đồng bộ (gần với #4285F4)
+  static const Color white = Constants.pureWhite;
+  static const Color black = Constants.darkBlueGrey;
+  static const Color errorRed = Color(0xFFD32F2F);
 
   @override
   void dispose() {
@@ -225,12 +233,12 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Constants.pureWhite,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Constants.pureWhite,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.blue.shade900),
+          icon: const Icon(Icons.arrow_back, color: Constants.primaryBlue),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -242,11 +250,11 @@ class _RegisterPageState extends State<RegisterPage> {
               constraints: const BoxConstraints(maxWidth: 400),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Constants.pureWhite,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Constants.secondaryGrey.withOpacity(0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -259,23 +267,24 @@ class _RegisterPageState extends State<RegisterPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title
-                    Text(
-                      'Create your\naccount',
+                    const Text(
+                      'Tạo tài khoản mới',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade900,
+                        color: black,
                         height: 1.2,
+                        fontFamily: 'BeautiqueDisplay',
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16), // hoặc 12, tuỳ ý bạn
 
                     // Name Field
                     Text(
-                      'Full Name',
+                      'Họ và tên',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.blue.shade900,
+                        color: black,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -285,22 +294,23 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: _validateName,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
-                        hintText: 'Enter your full name',
-                        hintStyle: TextStyle(color: Colors.blue.shade400),
-                        prefixIcon: Icon(Icons.person_outline, color: Colors.blue.shade700),
+                        hintText: 'Nhập họ và tên',
+                        hintStyle: TextStyle(color: Constants.secondaryGrey),
+                        prefixIcon: Icon(Icons.person_outline, color: primaryBlue),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700),
+                          borderSide: BorderSide(color: primaryBlue),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                          borderSide: BorderSide(color: primaryBlue, width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.red),
+                          borderSide: const BorderSide(color: errorRed),
                         ),
                       ),
+                      style: const TextStyle(color: black),
                     ),
                     const SizedBox(height: 20),
 
@@ -309,7 +319,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       'Email',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.blue.shade900,
+                        color: black,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -319,31 +329,32 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: _validateEmail,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        hintText: 'Enter your email',
-                        hintStyle: TextStyle(color: Colors.blue.shade400),
-                        prefixIcon: Icon(Icons.email_outlined, color: Colors.blue.shade700),
+                        hintText: 'Nhập email',
+                        hintStyle: TextStyle(color: Constants.secondaryGrey),
+                        prefixIcon: Icon(Icons.email_outlined, color: primaryBlue),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700),
+                          borderSide: BorderSide(color: primaryBlue),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                          borderSide: BorderSide(color: primaryBlue, width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.red),
+                          borderSide: const BorderSide(color: errorRed),
                         ),
                       ),
+                      style: const TextStyle(color: black),
                     ),
                     const SizedBox(height: 20),
 
                     // Password Field
                     Text(
-                      'Password',
+                      'Mật khẩu',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.blue.shade900,
+                        color: black,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -353,13 +364,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: _validatePassword,
                       obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(
-                        hintText: 'Create a strong password',
-                        hintStyle: TextStyle(color: Colors.blue.shade400),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.blue.shade700),
+                        hintText: 'Tạo mật khẩu mạnh',
+                        hintStyle: TextStyle(color: Constants.secondaryGrey),
+                        prefixIcon: Icon(Icons.lock_outline, color: primaryBlue),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                            color: Colors.blue.shade700,
+                            color: primaryBlue,
                           ),
                           onPressed: () {
                             setState(() => _isPasswordVisible = !_isPasswordVisible);
@@ -367,26 +378,27 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700),
+                          borderSide: BorderSide(color: primaryBlue),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                          borderSide: BorderSide(color: primaryBlue, width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.red),
+                          borderSide: const BorderSide(color: errorRed),
                         ),
                       ),
+                      style: const TextStyle(color: black),
                     ),
                     const SizedBox(height: 20),
 
                     // Confirm Password Field
                     Text(
-                      'Confirm Password',
+                      'Xác nhận mật khẩu',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.blue.shade900,
+                        color: black,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -396,13 +408,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: _validateConfirmPassword,
                       obscureText: !_isConfirmPasswordVisible,
                       decoration: InputDecoration(
-                        hintText: 'Confirm your password',
-                        hintStyle: TextStyle(color: Colors.blue.shade400),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.blue.shade700),
+                        hintText: 'Nhập lại mật khẩu',
+                        hintStyle: TextStyle(color: Constants.secondaryGrey),
+                        prefixIcon: Icon(Icons.lock_outline, color: primaryBlue),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                            color: Colors.blue.shade700,
+                            color: primaryBlue,
                           ),
                           onPressed: () {
                             setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
@@ -410,17 +422,18 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700),
+                          borderSide: BorderSide(color: primaryBlue),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                          borderSide: BorderSide(color: primaryBlue, width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.red),
+                          borderSide: const BorderSide(color: errorRed),
                         ),
                       ),
+                      style: const TextStyle(color: black),
                     ),
                     const SizedBox(height: 20),
 
@@ -432,30 +445,30 @@ class _RegisterPageState extends State<RegisterPage> {
                           onChanged: (value) {
                             setState(() => _agreeToTerms = value ?? false);
                           },
-                          activeColor: Colors.blue.shade700,
+                          activeColor: primaryBlue,
                         ),
                         Expanded(
                           child: RichText(
                             text: TextSpan(
-                              text: 'I agree to the ',
+                              text: 'Tôi đồng ý với ',
                               style: TextStyle(
-                                color: Colors.blue.shade900,
+                                color: black,
                                 fontSize: 14,
                               ),
                               children: [
                                 TextSpan(
-                                  text: 'Terms of Service',
+                                  text: 'Điều khoản sử dụng',
                                   style: TextStyle(
-                                    color: Colors.blue.shade700,
+                                    color: primaryBlue,
                                     fontWeight: FontWeight.w600,
                                     decoration: TextDecoration.underline,
                                   ),
                                 ),
-                                const TextSpan(text: ' and '),
+                                const TextSpan(text: ' và '),
                                 TextSpan(
-                                  text: 'Privacy Policy',
+                                  text: 'Chính sách bảo mật',
                                   style: TextStyle(
-                                    color: Colors.blue.shade700,
+                                    color: primaryBlue,
                                     fontWeight: FontWeight.w600,
                                     decoration: TextDecoration.underline,
                                   ),
@@ -474,8 +487,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleEmailRegister,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade800,
-                          foregroundColor: Colors.white,
+                          backgroundColor: primaryBlue,
+                          foregroundColor: Constants.pureWhite,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -488,11 +501,11 @@ class _RegisterPageState extends State<RegisterPage> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Constants.pureWhite),
                                 ),
                               )
                             : const Text(
-                                'Create Account',
+                                'Đăng ký',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -505,18 +518,18 @@ class _RegisterPageState extends State<RegisterPage> {
                     // Divider
                     Row(
                       children: [
-                        Expanded(child: Divider(color: Colors.blue.shade300)),
+                        Expanded(child: Divider(color: primaryBlue.withOpacity(0.3))),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            'or',
+                            'hoặc',
                             style: TextStyle(
-                              color: Colors.blue.shade600,
+                              color: Constants.secondaryGrey,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
-                        Expanded(child: Divider(color: Colors.blue.shade300)),
+                        Expanded(child: Divider(color: primaryBlue.withOpacity(0.3))),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -527,11 +540,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: _isLoading ? null : _handleFacebookSignIn,
-                            icon: const Icon(Icons.facebook, size: 20),
-                            label: const Text('Facebook'),
+                            icon: const Icon(Icons.facebook, size: 20, color: primaryBlue),
+                            label: const Text('Facebook', style: TextStyle(color: primaryBlue)),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.blue.shade900,
-                              side: BorderSide(color: Colors.blue.shade300),
+                              foregroundColor: primaryBlue,
+                              side: const BorderSide(color: primaryBlue),
+                              backgroundColor: white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -543,11 +557,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: _isLoading ? null : _handleGoogleSignIn,
-                            icon: const Icon(Icons.g_mobiledata, size: 24),
-                            label: const Text('Google'),
+                            icon: const Icon(Icons.g_mobiledata, size: 24, color: primaryBlue),
+                            label: const Text('Google', style: TextStyle(color: primaryBlue)),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.blue.shade900,
-                              side: BorderSide(color: Colors.blue.shade300),
+                              foregroundColor: primaryBlue,
+                              side: const BorderSide(color: primaryBlue),
+                              backgroundColor: white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -563,9 +578,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     Center(
                       child: RichText(
                         text: TextSpan(
-                          text: 'Already have an account? ',
+                          text: 'Đã có tài khoản? ',
                           style: TextStyle(
-                            color: Colors.blue.shade900,
+                            color: black,
                             fontSize: 16,
                           ),
                           children: [
@@ -575,9 +590,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                   Navigator.pop(context);
                                 },
                                 child: Text(
-                                  'Sign in',
+                                  'Đăng nhập',
                                   style: TextStyle(
-                                    color: Colors.blue.shade700,
+                                    color: primaryBlue,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     decoration: TextDecoration.underline,

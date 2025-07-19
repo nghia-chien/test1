@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -71,7 +72,7 @@ class _CalendarPageState extends State<CalendarPage> {
       context: context,
       builder: (context) {
         return Dialog(
-          backgroundColor: Colors.white,
+          backgroundColor: Constants.pureWhite,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -90,12 +91,12 @@ class _CalendarPageState extends State<CalendarPage> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: Constants.darkBlueGrey,
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Colors.black),
+                      icon: const Icon(Icons.close, color: Constants.darkBlueGrey),
                     ),
                   ],
                 ),
@@ -105,7 +106,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       ? const Center(
                           child: Text(
                             'No outfits saved yet',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: Constants.secondaryGrey),
                           ),
                         )
                       : ListView.builder(
@@ -173,12 +174,12 @@ class _CalendarPageState extends State<CalendarPage> {
           child: Container(
             margin: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              color: _selectedDay == date ? Colors.blue.shade50 : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _selectedDay == date ? Colors.blue : Colors.grey.shade300,
-                width: 2,
-              ),
+                              color: _selectedDay == date ? Constants.primaryBlue.withOpacity(0.1) : Constants.pureWhite,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _selectedDay == date ? Constants.primaryBlue : Constants.secondaryGrey.withOpacity(0.3),
+                  width: 2,
+                ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -187,7 +188,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   '$day',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: _selectedDay == date ? Colors.blue : Colors.black,
+                    color: _selectedDay == date ? Colors.blue : Constants.darkBlueGrey,
                   ),
                 ),
                 if (data?['outfitId'] != null)
@@ -201,7 +202,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     child: const Icon(
                       Icons.checkroom,
                       size: 12,
-                      color: Colors.white,
+                      color: Constants.pureWhite,
                     ),
                   ),
               ],
@@ -254,12 +255,12 @@ class _CalendarPageState extends State<CalendarPage> {
           child: Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Constants.pureWhite,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: Constants.secondaryGrey.withOpacity(0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Constants.darkBlueGrey.withOpacity(0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -278,14 +279,14 @@ class _CalendarPageState extends State<CalendarPage> {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black,
+                            color: Constants.darkBlueGrey,
                           ),
                         ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: Colors.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
@@ -314,8 +315,8 @@ class _CalendarPageState extends State<CalendarPage> {
                         width: 80,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.grey[100],
-                          border: Border.all(color: Colors.grey.shade300),
+                          color: Constants.secondaryGrey.withOpacity(0.1),
+                          border: Border.all(color: Constants.secondaryGrey.withOpacity(0.3)),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
@@ -354,7 +355,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Constants.darkBlueGrey,
                 ),
               ),
               const SizedBox(height: 12),
@@ -376,7 +377,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Constants.darkBlueGrey,
                 ),
               ),
               const SizedBox(height: 12),
@@ -400,10 +401,10 @@ class _CalendarPageState extends State<CalendarPage> {
                         width: 80,
                         margin: const EdgeInsets.only(right: 12),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.blue.shade50 : Colors.white,
+                          color: isSelected ? Colors.blue.withOpacity(0.1) : Constants.pureWhite,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSelected ? Colors.blue : Colors.grey.shade300,
+                            color: isSelected ? Colors.blue : Constants.secondaryGrey.withOpacity(0.3),
                             width: 2,
                           ),
                         ),
@@ -414,7 +415,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               DateFormat.E('vi').format(date),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.blue : Colors.black,
+                                color: isSelected ? Colors.blue : Constants.darkBlueGrey,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -422,7 +423,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               date.day.toString(),
                               style: TextStyle(
                                 fontSize: 16,
-                                color: isSelected ? Colors.blue : Colors.black,
+                                color: isSelected ? Colors.blue : Constants.darkBlueGrey,
                               ),
                             ),
                             if (data?['outfitId'] != null)
@@ -435,7 +436,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                 ),
                                 child: const Icon(
                                   Icons.checkroom,
-                                  color: Colors.white,
+                                  color: Constants.pureWhite,
                                   size: 12,
                                 ),
                               ),
@@ -458,14 +459,14 @@ class _CalendarPageState extends State<CalendarPage> {
     final daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
     
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Constants.secondaryGrey.withOpacity(0.1),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Constants.pureWhite,
         elevation: 0,
         title: const Text(
           'Fashion Calendar',
           style: TextStyle(
-            color: Colors.black,
+            color: Constants.darkBlueGrey,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -479,7 +480,7 @@ class _CalendarPageState extends State<CalendarPage> {
               }),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
+                foregroundColor: Constants.pureWhite,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -513,13 +514,13 @@ class _CalendarPageState extends State<CalendarPage> {
               children: [
                 if (_isMonthlyView) ...[
                   Container(
-                    color: Colors.white,
+                    color: Constants.pureWhite,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.chevron_left, color: Colors.black),
+                          icon: const Icon(Icons.chevron_left, color: Constants.darkBlueGrey),
                           onPressed: () => setState(() {
                             _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
                             _selectedDay = null;
@@ -530,11 +531,11 @@ class _CalendarPageState extends State<CalendarPage> {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: Constants.darkBlueGrey,
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.chevron_right, color: Colors.black),
+                          icon: const Icon(Icons.chevron_right, color: Constants.darkBlueGrey),
                           onPressed: () => setState(() {
                             _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
                             _selectedDay = null;
@@ -544,7 +545,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     ),
                   ),
                   Container(
-                    color: Colors.white,
+                    color: Constants.pureWhite,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -555,7 +556,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                     d,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                      color: Constants.darkBlueGrey,
                                     ),
                                   ),
                                 ),
@@ -565,7 +566,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                   Expanded(
                     child: Container(
-                      color: Colors.white,
+                      color: Constants.pureWhite,
                       child: GridView.count(
                         crossAxisCount: 7,
                         padding: const EdgeInsets.all(8),
@@ -579,7 +580,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 if (_selectedDay != null)
                   Container(
                     width: double.infinity,
-                    color: Colors.white,
+                    color: Constants.pureWhite,
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,7 +590,7 @@ class _CalendarPageState extends State<CalendarPage> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: Constants.darkBlueGrey,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -613,7 +614,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue,
-                                  foregroundColor: Colors.white,
+                                  foregroundColor: Constants.pureWhite,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -642,7 +643,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                     Text(
                                       "Outfit Items:",
                                       style: TextStyle(
-                                        color: Colors.grey.shade600,
+                                        color: Constants.secondaryGrey.withOpacity(0.6),
                                         fontSize: 14,
                                       ),
                                     ),
@@ -661,8 +662,8 @@ class _CalendarPageState extends State<CalendarPage> {
                                             width: 80,
                                             decoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(12),
-                                              color: Colors.grey.shade100,
-                                              border: Border.all(color: Colors.grey.shade300),
+                                              color: Constants.secondaryGrey.withOpacity(0.1),
+                                              border: Border.all(color: Constants.secondaryGrey.withOpacity(0.3)),
                                             ),
                                             child: base64Image.startsWith('data:image')
                                                 ? Image.memory(
@@ -683,7 +684,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                           ),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.blue,
-                                            foregroundColor: Colors.white,
+                                            foregroundColor: Constants.pureWhite,
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
                                             ),
@@ -781,7 +782,7 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
       return Center(
         child: Text(
           'Weather unavailable',
-          style: TextStyle(color: Colors.grey.shade600),
+          style: TextStyle(color: Constants.secondaryGrey.withOpacity(0.6)),
         ),
       );
     }
@@ -789,7 +790,7 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
       return Center(
         child: Text(
           'No weather data',
-          style: TextStyle(color: Colors.grey.shade600),
+          style: TextStyle(color: Constants.secondaryGrey.withOpacity(0.6)),
         ),
       );
     }
@@ -811,12 +812,12 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
             margin: const EdgeInsets.only(right: 12),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Constants.pureWhite,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: Constants.secondaryGrey.withOpacity(0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Constants.darkBlueGrey.withOpacity(0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -829,7 +830,7 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
                   day,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Constants.darkBlueGrey,
                     fontSize: 12,
                   ),
                 ),
@@ -841,7 +842,7 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
                   errorBuilder: (_, __, ___) => const Icon(
                     Icons.cloud,
                     size: 32,
-                    color: Colors.grey,
+                    color: Constants.secondaryGrey,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -849,7 +850,7 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
                   '$tempMax°/$tempMin°',
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Colors.black,
+                    color: Constants.darkBlueGrey,
                   ),
                 ),
               ],

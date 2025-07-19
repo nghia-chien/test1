@@ -5,13 +5,15 @@ import '../services/location_service.dart';
 import '../services/weather_service.dart';
 import 'chat_screen.dart';
 import 'notification.dart';
-import 'profile_page1.dart';
 import 'uploadimage_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'calendar_page.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import '../utils/responsive_helper.dart';
+import '../constants/constants.dart';
 import 'history_page.dart';
+import 'CreateOutfitPage.dart';
+import 'dart:typed_data';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,13 +30,6 @@ class _HomePageState extends State<HomePage> {
   String? countryCode;
   String? _userName;
   final TextEditingController _searchController = TextEditingController();
-
-  final List<String> outfitImagePaths = [
-    'lib/images/feed/autumn_essentials.jpg',
-    'lib/images/feed/summer_vibe.jpg',
-    'lib/images/feed/timeless_elegance.jpg',
-    'lib/images/feed/urban_street.jpg',
-  ];
 
   List<AnimatedText> _generateAnimatedTexts() {
     final name = _userName ?? 'bạn';
@@ -61,6 +56,7 @@ class _HomePageState extends State<HomePage> {
     _loadUserName();
     fetchWeatherData();
   }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -99,12 +95,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-//build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFECF0F1),
-      
+      backgroundColor: Constants.pureWhite,
       body: SafeArea(
         child: Center(
           child: Container(
@@ -116,11 +110,11 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 5),
-                  _buildActionRow(),
-                  const SizedBox(height: 20),
-                  _buildAIStylishPrompt(),
+                  const SizedBox(height: 10),
+                  buildActionGrid(context),
                   const SizedBox(height: 30),
+                  _buildAIStylishPrompt(),
+                  const SizedBox(height: 12),
                   _buildSearchBox(),
                   const SizedBox(height: 30),
                   _buildRecentOutfitsTitle(),
@@ -137,53 +131,85 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildActionRow() {
+  Widget buildActionGrid(BuildContext context) {
     final actions = [
-      {'icon': Icons.upload_file, 'label': 'Upload'},
-      {'icon': Icons.checkroom, 'label': 'Create'},
-      {'icon': Icons.calendar_today, 'label': 'Plan'},
-      {'icon': Icons.history, 'label': 'History'},
+      {
+        'icon': Icons.upload_file,
+        'label': 'Thêm đồ',
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UploadClothingPage()),
+          );
+        }
+      },
+      {
+        'icon': Icons.style_outlined, 
+        'label': 'Tạo outfit', 
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EditOutfitPage()),
+          );
+      }
+      },
+      {
+        'icon': Icons.calendar_today,
+        'label': 'Kế hoạch',
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CalendarPage()),
+          );
+        }
+      },
+      {
+        'icon': Icons.favorite_border,
+        'label': 'Yêu thích',
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const HistoryPage()),
+          );
+        }
+      },
     ];
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: actions.asMap().entries.map((entry) {
-        final action = entry.value;
-        return Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          elevation: 2,
+      children: actions.map((item) {
+        return Expanded(
           child: InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: () {
-              if (action['icon'] == Icons.calendar_today) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CalendarPage()),
-                );
-              } else {
-                
-              }
-              if(action['icon'] == Icons.upload_file) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UploadClothingPage()),
-                );
-              } else if (action['icon'] == Icons.history) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HistoryPage()),
-                );
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-              child: Column(
-                children: [
-                  Icon(action['icon'] as IconData, color: const Color.fromARGB(255, 228, 8, 8), size: 28),
-                  const SizedBox(height: 6),
-                  Text(action['label'] as String, style: const TextStyle(fontSize: 13, color: Color(0xFF2C3E50))),
-                ],
-              ),
+            borderRadius: BorderRadius.circular(50),
+            onTap: item['onTap'] as VoidCallback,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: Constants.pureWhite,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Constants.darkBlueGrey.withOpacity(0.1), blurRadius: 4)],
+                  ),
+                  child: Icon(
+                    item['icon'] as IconData,
+                    size: 26,
+                    color: Constants.primaryBlue,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  item['label'] as String,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF2C3E50),
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         );
@@ -193,30 +219,31 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildAIStylishPrompt() {
     return Material(
-      elevation: 3,
+      elevation: 2,
       borderRadius: BorderRadius.circular(18),
-      color: Colors.white,
+      color: const Color(0xFFFAFAFA),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ChatScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ChatScreen()),
           );
         },
-        child: Padding(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: const Color(0xFFFAFAFA),
+          ),
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: const Color(0xFF5B67CA).withOpacity(0.12),
-                child: const Icon(Icons.smart_toy, color: Color(0xFF5B67CA), size: 32),
+                backgroundColor: const Color(0xFFF5F5F5),
+                child: const Icon(Icons.smart_toy, color: Color(0xFF4285F4), size: 32),
               ),
               const SizedBox(width: 18),
-              // Text section - wrapped and constrained
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,11 +263,13 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      "AI Stylish",
+                      "AI Stylist",
                       style: TextStyle(
-                        fontSize: 17,
+                        fontFamily: 'BeautiqueDisplay',
+                        fontSize: 15,
                         fontStyle: FontStyle.italic,
-                        color: Color(0xFF0D47A1),
+                        color: Color(0xFF4285F4),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -256,11 +285,10 @@ class _HomePageState extends State<HomePage> {
   Widget _buildSearchBox() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3A8EDC), width: 2),
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
+        borderRadius: BorderRadius.circular(100),
+        color: const Color(0xFFF2F2F2),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       child: Row(
         children: [
           Expanded(
@@ -269,35 +297,33 @@ class _HomePageState extends State<HomePage> {
               decoration: const InputDecoration(
                 hintText: "Gợi ý phong cách?",
                 border: InputBorder.none,
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: TextStyle(color: Color(0xFF7D7F85)),
               ),
             ),
           ),
           Container(
+            width: 38,
+            height: 38,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFF3A8EDC),
+              color: Colors.black,
             ),
             child: IconButton(
+              padding: EdgeInsets.zero,
+              iconSize: 18,
               icon: const Icon(Icons.arrow_forward, color: Colors.white),
               onPressed: () {
                 final input = _searchController.text.trim();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatScreen(
-                        weatherDescription: weatherDescription,
-                        temperature: temperature,
-                        initialQuery: input.isNotEmpty ? input : null,
-                      ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatScreen(
+                      weatherDescription: weatherDescription,
+                      temperature: temperature,
+                      initialQuery: input.isNotEmpty ? input : null,
                     ),
-                  );
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (_) => ChatScreen(initialQuery: input),
-                  //   ),
-                  // );
+                  ),
+                );
               },
             ),
           ),
@@ -311,12 +337,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecentOutfits() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      return const Text('Vui lòng đăng nhập');
+    }
+
     double height = ResponsiveHelper.isMobile(context) ? 70 : 100;
+    int imageCount = ResponsiveHelper.isMobile(context) ? 6 : 10;
+
     return SizedBox(
       height: height,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: outfitImagePaths.map((url) => _recentOutfitImg(url, height)).toList(),
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('clothing_items')
+            .where('uid', isEqualTo: uid)
+            .orderBy('uploaded_at', descending: true)
+            .limit(imageCount)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Bạn chưa thêm món đồ nào'));
+          }
+
+          final items = snapshot.data!.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data['base64Image'] ?? data['imageUrl'] ?? '';
+          }).where((url) => url.isNotEmpty).toList();
+
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return _recentOutfitImg(items[index], height);
+            },
+          );
+        },
       ),
     );
   }
@@ -328,11 +387,26 @@ class _HomePageState extends State<HomePage> {
       height: size,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: CachedNetworkImage(
-          imageUrl: url,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+        child: Builder(
+          builder: (context) {
+            if (url.startsWith('data:image')) {
+              try {
+                final uriData = Uri.parse(url).data;
+                if (uriData == null) return const Icon(Icons.broken_image);
+                final bytes = uriData.contentAsBytes();
+                return Image.memory(bytes, fit: BoxFit.cover);
+              } catch (e) {
+                return const Icon(Icons.broken_image);
+              }
+            } else {
+              return CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+              );
+            }
+          },
         ),
       ),
     );
@@ -341,47 +415,83 @@ class _HomePageState extends State<HomePage> {
   Widget buildWeatherCard() {
     if (weatherDescription == null || temperature == null || weatherIconCode == null) {
       return Container(
-        height: 100,
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade400),
-          borderRadius: BorderRadius.circular(30),
-          color: Colors.white,
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(1, 2))],
+          borderRadius: BorderRadius.circular(20),
+          color: const Color(0xFF0047AB),
+          boxShadow: const [
+            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 3)),
+          ],
         ),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: const Row(
           children: [
-            Text('🌤️', style: TextStyle(fontSize: 24)),
+            Text('🌤️', style: TextStyle(fontSize: 28, color: Colors.white)),
             SizedBox(width: 12),
-            Expanded(child: Text("Đang tải thời tiết...", style: TextStyle(fontSize: 18))),
+            Expanded(
+              child: Text(
+                "Đang tải thời tiết...",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       );
     }
 
     final iconUrl = 'https://openweathermap.org/img/wn/$weatherIconCode@4x.png';
+
     return Container(
-      height: 120,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.blue.shade200),
         borderRadius: BorderRadius.circular(30),
-        color: Colors.blue.shade50,
+        color: const Color(0xFF4285F4),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(1, 2))],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Image.network(iconUrl, width: 80, height: 80, fit: BoxFit.cover),
           const SizedBox(width: 16),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${temperature!.toStringAsFixed(1)}°C', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-              Text(weatherDescription!.toUpperCase(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
-              Text('$cityName, $countryCode', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Colors.black54)),
-            ],
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${temperature!.toStringAsFixed(1)}°C',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  weatherDescription!.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$cityName, $countryCode',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),

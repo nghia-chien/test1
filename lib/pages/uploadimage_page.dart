@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import 'dart:html' as html;
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -144,7 +145,9 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          border: const OutlineInputBorder(),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
     );
@@ -162,7 +165,12 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
         value: value,
         items: items.map((item) => DropdownMenuItem<T>(value: item, child: Text(item.toString()))).toList(),
         onChanged: onChanged,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
       ),
     );
   }
@@ -173,23 +181,40 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
     final colorOptions = [...colors, 'Khác...'];
     final styleOptions = [...styles, 'Khác...'];
     return Scaffold(
-      appBar: AppBar(title: const Text('Tải ảnh & thông tin trang phục')),
+      backgroundColor: Constants.pureWhite,
+      appBar: AppBar(
+        title: const Text('Tải ảnh & thông tin trang phục', style: TextStyle(color: Constants.darkBlueGrey)),
+        backgroundColor: Constants.pureWhite,
+        foregroundColor: Constants.darkBlueGrey,
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             _base64Image != null
-                ? Image.memory(
-                    base64Decode(_base64Image!.split(',').last),
-                    height: 200,
-                    fit: BoxFit.cover,
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      base64Decode(_base64Image!.split(',').last),
+                      height: 200,
+                      fit: BoxFit.cover,
+                    ),
                   )
                 : const Text('Chưa chọn ảnh'),
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: _pickImage,
-              icon: const Icon(Icons.photo),
-              label: const Text('Chọn ảnh từ thư viện'),
+              icon: const Icon(Icons.photo, color: Constants.pureWhite),
+              label: const Text('Chọn ảnh từ thư viện', style: TextStyle(color: Constants.pureWhite)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB71C1C),
+                foregroundColor: Constants.pureWhite,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             _buildTextField('Tên trang phục', _nameController),
@@ -214,9 +239,11 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TextField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Nhập màu sắc khác',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   onChanged: (val) => setState(() => _customColor = val),
                 ),
@@ -236,94 +263,75 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TextField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Nhập phong cách khác',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   onChanged: (val) => setState(() => _customStyle = val),
                 ),
               ),
-            // Mùa (season) - chọn bằng FilterChip, chỉ 1 mùa
             _buildDropdown<String>(
               label: 'Mùa (season)',
               items: seasons,
               value: _selectedSeason,
               onChanged: (val) => setState(() => _selectedSeason = val),
             ),
+            // Dịp sử dụng (occasions) - multi-select bằng Wrap + FilterChip
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Dịp sử dụng (occasions):'),
-                  Center(
-                    child: Wrap(
-                      spacing: 8,
-                      children: occasionOptions.map((occasion) {
-                        final isSelected = _selectedOccasions.contains(occasion);
-                        return FilterChip(
-                          label: Text(occasion),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedOccasions.add(occasion);
-                              } else {
-                                _selectedOccasions.remove(occasion);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            labelText: 'Thêm dịp sử dụng khác',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (val) => setState(() => _customOccasion = val),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (_customOccasion != null && _customOccasion!.trim().isNotEmpty && !occasionOptions.contains(_customOccasion!.trim())) {
-                            setState(() {
-                              occasionOptions.add(_customOccasion!.trim());
-                              // Không tự động add vào _selectedOccasions
-                              _customOccasion = null;
-                            });
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: occasionOptions.map((option) {
+                    final isSelected = _selectedOccasions.contains(option);
+                    return FilterChip(
+                      label: Text(option),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedOccasions.add(option);
+                          } else {
+                            _selectedOccasions.remove(option);
                           }
-                        },
-                        child: const Text('Thêm'),
+                        });
+                      },
+                      selectedColor: Constants.primaryBlue.withOpacity(0.15),
+                      labelStyle: TextStyle(
+                        color: isSelected ? Constants.primaryBlue : Constants.darkBlueGrey.withOpacity(0.6),
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
-                  ),
-                ],
+                      backgroundColor: Constants.pureWhite,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: isSelected ? Constants.primaryBlue : Constants.secondaryGrey.withOpacity(0.3), width: 1.5),
+                      ),
+                      elevation: 2,
+                      pressElevation: 4,
+                    );
+                  }).toList(),
+                ),
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Switch(
-                  value: _isPublic,
-                  onChanged: (val) => setState(() => _isPublic = val),
-                ),
-                const Text('Công khai cho mọi người'),
-              ],
-            ),
             _isUploading
                 ? const CircularProgressIndicator()
                 : ElevatedButton.icon(
                     onPressed: _uploadToFirestore,
-                    icon: const Icon(Icons.upload),
-                    label: const Text('Tải lên'),
+                    icon: const Icon(Icons.upload, color: Constants.pureWhite),
+                    label: const Text('Tải lên', style: TextStyle(color: Constants.pureWhite)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB71C1C),
+                      foregroundColor: Constants.pureWhite,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import 'package:chat_bubbles/chat_bubbles.dart';
 import '../services/chat_service.dart';
 import '../models/chat_message.dart';
@@ -13,11 +14,11 @@ class ChatScreen extends StatefulWidget {
   final String? initialQuery;
 
   const ChatScreen({
-    Key? key,
+    super.key,
     this.weatherDescription,
     this.temperature,
     this.initialQuery,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -28,6 +29,10 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
+
+  final Color primaryBlue = Constants.primaryBlue;
+  final Color white = Constants.pureWhite;
+  final Color black = Constants.darkBlueGrey;
 
   @override
   void initState() {
@@ -49,42 +54,41 @@ class _ChatScreenState extends State<ChatScreen> {
 
     await _chatService.sendMessage(trimmed);
 
-    // Thêm activity history cho chat
     await ActivityHistoryService.addActivity(
       action: 'chat',
       description: 'Chat với AI: ${trimmed.substring(0, trimmed.length > 50 ? 50 : trimmed.length)}...',
-      metadata: {
-        'message': trimmed,
-      },
+      metadata: {'message': trimmed},
     );
 
     setState(() => _isLoading = false);
     _scrollToBottom();
   }
+
   Future<void> _showSessionList() async {
-  final sessions = await _chatService.listSessions();
+    final sessions = await _chatService.listSessions();
+    if (!mounted) return;
 
-  if (!mounted) return;
-
-  showModalBottomSheet(
-    context: context,
-    builder: (_) => ListView.builder(
-      itemCount: sessions.length,
-      itemBuilder: (_, index) {
-        final s = sessions[index];
-        return ListTile(
-          title: Text("Phiên trò chuyện lúc ${s['createdAt']}"),
-          onTap: () async {
-            Navigator.pop(context); // Đóng bottom sheet
-            await _chatService.switchSession(s['sessionId']);
-            setState(() {});
-            _scrollToBottom();
-          },
-        );
-      },
-    ),
-  );
-}
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => ListView.builder(
+        itemCount: sessions.length,
+        itemBuilder: (_, index) {
+          final s = sessions[index];
+          return ListTile(
+            leading: Icon(Icons.chat_bubble_outline, color: white),
+            title: Text("Phiên trò chuyện lúc ${s['createdAt']}", style: TextStyle(color: white)),
+            onTap: () async {
+              Navigator.pop(context);
+              await _chatService.switchSession(s['sessionId']);
+              setState(() {});
+              _scrollToBottom();
+            },
+          );
+        },
+      ),
+      backgroundColor: const Color(0xFF1E3A8A),
+    );
+  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -101,21 +105,21 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildWeatherInfo() {
     if (widget.weatherDescription == null || widget.temperature == null) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(16),
+          color: Constants.pureWhite.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            const Icon(Icons.wb_cloudy, color: Colors.white),
-            const SizedBox(width: 8),
+            Icon(Icons.cloud, color: white, size: 28),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'Thời tiết: ${widget.weatherDescription}, ${widget.temperature!.toStringAsFixed(1)}°C',
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: white, fontSize: 16),
               ),
             ),
           ],
@@ -128,7 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Expanded(
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: _chatService.history.length,
         itemBuilder: (context, index) {
           final msg = _chatService.history[index];
@@ -142,14 +146,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   }
                 : null,
             child: Tooltip(
-              message: msg.type == MessageType.bot ? "Nhấn giữ để sao chép" : '',
+              message: msg.type == MessageType.bot ? "Nhấn đúp để sao chép" : '',
               child: BubbleSpecialThree(
                 text: msg.text,
-                color: msg.type == MessageType.user ? Colors.white24 : Colors.white,
+                color: msg.type == MessageType.user ? primaryBlue : Constants.pureWhite,
                 tail: true,
                 isSender: msg.type == MessageType.user,
                 textStyle: TextStyle(
-                  color: msg.type == MessageType.user ? Colors.white : Colors.black87,
+                  color: msg.type == MessageType.user ? white : black,
                   fontSize: 15,
                 ),
               ),
@@ -162,39 +166,35 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildInputBar() {
     final isMobileWeb = MediaQuery.of(context).size.width < 500 && kIsWeb;
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
+          color: Constants.pureWhite,
+          borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
           children: [
             if (!isMobileWeb)
-              IconButton(
-                icon: const Icon(Icons.attach_file, color: Colors.grey),
-                onPressed: () {},
-              ),
+              Icon(Icons.attach_file, color: Constants.secondaryGrey.withValues(alpha: 0.6), size: 22),
+            const SizedBox(width: 8),
             Expanded(
               child: TextField(
                 controller: _textController,
                 onSubmitted: _autoSend,
-                style: const TextStyle(color: Colors.black87),
+                style: TextStyle(color: Constants.darkBlueGrey.withValues(alpha: 0.87)),
                 decoration: const InputDecoration(
-                  hintText: 'Nhập nội dung...',
-                  hintStyle: TextStyle(color: Colors.grey),
+                  hintText: 'Hỏi bất cứ điều gì về thời trang!',
+                  hintStyle: TextStyle(color: Constants.secondaryGrey),
                   border: InputBorder.none,
                 ),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.send, color: Colors.white),
+              icon: const Icon(Icons.send_rounded, color: Color(0xFF3B82F6), size: 24),
               onPressed: () => _autoSend(_textController.text),
-              color: const Color(0xFF2A6AC9),
-              splashRadius: 24,
+              splashRadius: 20,
               tooltip: "Gửi",
             ),
           ],
@@ -205,35 +205,45 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Constants.pureWhite, size: 24),
+            onPressed: () => Navigator.pop(context),
+            tooltip: "Quay lại",
+          ),
+          Expanded(
+            child: Text(
+              "Trợ lý thời trang",
+              style: const TextStyle(
+                color: Constants.pureWhite,
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                letterSpacing: 0.2,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.delete_sweep_outlined, color: Constants.pureWhite, size: 24),
+                tooltip: "Xóa cuộc trò chuyện",
+                onPressed: () async {
+                  await _chatService.deleteCurrentSession();
+                  setState(() {});
+                },
               ),
-              const SizedBox(width: 8),
-              const Text(
-                "Trợ lý thời trang",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+              IconButton(
+                icon: const Icon(Icons.history_edu_outlined, color: Constants.pureWhite, size: 24),
+                tooltip: "Lịch sử trò chuyện",
+                onPressed: _showSessionList,
               ),
             ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_forever, color: Colors.white),
-            tooltip: "Xoá cuộc trò chuyện hiện tại",
-            onPressed: () async {
-              await _chatService.deleteCurrentSession();
-              setState(() {}); // Làm mới giao diện
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.history, color: Colors.white),
-            tooltip: "Xem lịch sử trò chuyện",
-            onPressed: _showSessionList,
           ),
         ],
       ),
@@ -243,25 +253,34 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2C3E6F),
+      backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                _buildWeatherInfo(),
-                if (_isLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Center(child: CircularProgressIndicator(color: Colors.white)),
-                  ),
-                _buildMessages(),
-                _buildInputBar(),
-              ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF3B82F6), Color(0xFFE0EAFC)],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  _buildWeatherInfo(),
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(child: CircularProgressIndicator(color: Constants.pureWhite)),
+                    ),
+                  _buildMessages(),
+                  _buildInputBar(),
+                ],
+              ),
             ),
           ),
         ),

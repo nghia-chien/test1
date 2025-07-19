@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -21,6 +22,15 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   String? _errorMessage;
+
+  static const Color primaryBlue = Constants.primaryBlue; // Màu xanh chủ đạo đồng bộ
+  static const Color darkBlue = Constants.primaryBlue; // Màu xanh đậm đồng bộ
+  static const Color lightBlue = Color(0xFFB6D2FF); // Màu xanh nhạt đồng bộ (gần với #4285F4)
+  static const Color white = Constants.pureWhite;
+  static const Color black = Constants.darkBlueGrey;
+  static const Color errorRed = Color(0xFFD32F2F);
+  static const Color facebookBlue = Color(0xFF1877F3);
+  static const Color googleBlue = Constants.primaryBlue;
 
   @override
   void dispose() {
@@ -213,7 +223,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Constants.pureWhite,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -222,11 +232,11 @@ class _LoginPageState extends State<LoginPage> {
               constraints: const BoxConstraints(maxWidth: 400),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Constants.pureWhite,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Constants.secondaryGrey.withOpacity(0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -239,14 +249,34 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title
-                    Text(
-                      'Welcome To\nFashion  App',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade900,
-                        height: 1.2,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 24),
+                        Text(
+                          'Chào mừng đến với',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: black,
+                            fontFamily: 'BeautiqueDisplay',
+                            height: 1.2,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Text(
+                          'WH⬥Y',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            color: black,
+                            fontFamily: 'BeautiqueDisplay',
+                           letterSpacing: 1.2,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ),
                     const SizedBox(height: 32),
 
@@ -255,7 +285,7 @@ class _LoginPageState extends State<LoginPage> {
                       'Email',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.blue.shade900,
+                        color: black, // chữ đen
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -265,31 +295,32 @@ class _LoginPageState extends State<LoginPage> {
                       validator: _validateEmail,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        hintText: 'Enter your email',
-                        hintStyle: TextStyle(color: Colors.blue.shade400),
-                        prefixIcon: Icon(Icons.email_outlined, color: Colors.blue.shade700),
+                        hintText: 'Nhập email của bạn',
+                        hintStyle: TextStyle(color: Constants.secondaryGrey), // xám nhạt
+                        prefixIcon: Icon(Icons.email_outlined, color: primaryBlue), // icon hiệu ứng xanh
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700),
+                          borderSide: BorderSide(color: primaryBlue), // border xanh khi focus
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                          borderSide: BorderSide(color: primaryBlue, width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.red),
+                          borderSide: const BorderSide(color: errorRed),
                         ),
                       ),
+                      style: const TextStyle(color: black), // chữ đen
                     ),
                     const SizedBox(height: 20),
 
                     // Password Field
                     Text(
-                      'Password',
+                      'Mật khẩu',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.blue.shade900,
+                        color: black, // chữ đen
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -299,13 +330,13 @@ class _LoginPageState extends State<LoginPage> {
                       validator: _validatePassword,
                       obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(
-                        hintText: 'Enter your password',
-                        hintStyle: TextStyle(color: Colors.blue.shade400),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.blue.shade700),
+                        hintText: 'Nhập mật khẩu',
+                        hintStyle: TextStyle(color: Constants.secondaryGrey),
+                        prefixIcon: Icon(Icons.lock_outline, color: primaryBlue),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                            color: Colors.blue.shade700,
+                            color: primaryBlue,
                           ),
                           onPressed: () {
                             setState(() => _isPasswordVisible = !_isPasswordVisible);
@@ -313,17 +344,18 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700),
+                          borderSide: BorderSide(color: primaryBlue),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+                          borderSide: BorderSide(color: primaryBlue, width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.red),
+                          borderSide: const BorderSide(color: errorRed),
                         ),
                       ),
+                      style: const TextStyle(color: black), // chữ đen
                     ),
                     const SizedBox(height: 12),
 
@@ -333,9 +365,9 @@ class _LoginPageState extends State<LoginPage> {
                       child: TextButton(
                         onPressed: _handleForgotPassword,
                         child: Text(
-                          'Forgot?',
+                          'Quên mật khẩu?',
                           style: TextStyle(
-                            color: Colors.blue.shade700,
+                            color: primaryBlue, // link hiệu ứng xanh
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -349,8 +381,8 @@ class _LoginPageState extends State<LoginPage> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleEmailLogin,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade800,
-                          foregroundColor: Colors.white,
+                          backgroundColor: primaryBlue,
+                          foregroundColor: white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -363,14 +395,15 @@ class _LoginPageState extends State<LoginPage> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(white),
                                 ),
                               )
                             : const Text(
-                                'Login',
+                                'Đăng nhập',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
+                                  color: white, // nút chữ trắng
                                 ),
                               ),
                       ),
@@ -380,18 +413,18 @@ class _LoginPageState extends State<LoginPage> {
                     // Divider
                     Row(
                       children: [
-                        Expanded(child: Divider(color: Colors.blue.shade300)),
+                        Expanded(child: Divider(color: primaryBlue.withOpacity(0.3))),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            'or',
+                            'hoặc',
                             style: TextStyle(
-                              color: Colors.blue.shade600,
+                              color: Constants.secondaryGrey, // chữ xám
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
-                        Expanded(child: Divider(color: Colors.blue.shade300)),
+                        Expanded(child: Divider(color: primaryBlue.withOpacity(0.3))),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -402,11 +435,12 @@ class _LoginPageState extends State<LoginPage> {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: _isLoading ? null : _handleFacebookSignIn,
-                            icon: const Icon(Icons.facebook, size: 20),
-                            label: const Text('Facebook'),
+                            icon: const Icon(Icons.facebook, size: 20, color: facebookBlue),
+                            label: const Text('Facebook', style: TextStyle(color: facebookBlue)),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.blue.shade900,
-                              side: BorderSide(color: Colors.blue.shade300),
+                              foregroundColor: facebookBlue,
+                              side: const BorderSide(color: facebookBlue),
+                              backgroundColor: white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -418,11 +452,12 @@ class _LoginPageState extends State<LoginPage> {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: _isLoading ? null : _handleGoogleSignIn,
-                            icon: const Icon(Icons.g_mobiledata, size: 24),
-                            label: const Text('Google'),
+                            icon: const Icon(Icons.g_mobiledata, size: 24, color: googleBlue),
+                            label: const Text('Google', style: TextStyle(color: googleBlue)),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.blue.shade900,
-                              side: BorderSide(color: Colors.blue.shade300),
+                              foregroundColor: googleBlue,
+                              side: const BorderSide(color: googleBlue),
+                              backgroundColor: white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -438,9 +473,9 @@ class _LoginPageState extends State<LoginPage> {
                     Center(
                       child: RichText(
                         text: TextSpan(
-                          text: 'Don\'t have an account? ',
+                          text: 'Chưa có tài khoản? ',
                           style: TextStyle(
-                            color: Colors.blue.shade900,
+                            color: black, // chữ đen
                             fontSize: 16,
                           ),
                           children: [
@@ -455,9 +490,9 @@ class _LoginPageState extends State<LoginPage> {
                                   );
                                 },
                                 child: Text(
-                                  'Sign up',
+                                  'Đăng ký',
                                   style: TextStyle(
-                                    color: Colors.blue.shade700,
+                                    color: primaryBlue, // link hiệu ứng xanh
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     decoration: TextDecoration.underline,
@@ -477,19 +512,19 @@ class _LoginPageState extends State<LoginPage> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade50,
+                            color: errorRed.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
+                            border: Border.all(color: errorRed.withOpacity(0.3)),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                              Icon(Icons.error_outline, color: errorRed, size: 20),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _errorMessage!,
                                   style: TextStyle(
-                                    color: Colors.red.shade700,
+                                    color: errorRed,
                                     fontSize: 14,
                                   ),
                                 ),

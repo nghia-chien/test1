@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
 import 'uploadimage_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../constants/constants.dart';
 
 class ClosetPage extends StatefulWidget {
   const ClosetPage({super.key});
@@ -30,13 +32,17 @@ class _ClosetPageState extends State<ClosetPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    const primaryBlue = Constants.primaryBlue; // Màu xanh đồng bộ với HomePage
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      return const Center(child: Text('Vui lòng đăng nhập'));
+    }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE7ECEF),
+      backgroundColor: Constants.pureWhite,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [       
+        children: [
           const SizedBox(height: 16),
           // Category Filter
           SizedBox(
@@ -57,17 +63,16 @@ class _ClosetPageState extends State<ClosetPage> {
                       _selectedCategory = category;
                     });
                   },
-                  selectedColor: theme.colorScheme.primary.withAlpha(30),
+                  selectedColor: primaryBlue.withOpacity(0.15),
                   labelStyle: TextStyle(
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : Colors.black54,
+                    color: isSelected ? primaryBlue : Constants.darkBlueGrey.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(color: isSelected ? primaryBlue : Colors.grey.shade300, width: 1.5),
                   ),
-                  backgroundColor: Colors.white,
+                  backgroundColor: Constants.pureWhite,
                   elevation: 2,
                   pressElevation: 4,
                 );
@@ -81,6 +86,7 @@ class _ClosetPageState extends State<ClosetPage> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('clothing_items')
+                  .where('uid', isEqualTo: uid)
                   .orderBy('uploaded_at', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
@@ -129,19 +135,18 @@ class _ClosetPageState extends State<ClosetPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UploadClothingPage()),
-                );
-              
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UploadClothingPage()),
+          );
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm đồ'),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Thêm đồ', style: TextStyle(color: Colors.white)),
+        backgroundColor: primaryBlue,
+        foregroundColor: Colors.white,
       ),
     );
   }
-
 }
 
 class _ClothingItemCard extends StatelessWidget {
@@ -151,10 +156,10 @@ class _ClothingItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    const primaryBlue = Constants.primaryBlue;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Constants.pureWhite,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
@@ -193,20 +198,22 @@ class _ClothingItemCard extends StatelessWidget {
                 children: [
                   Text(item.name,
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14)),
+                          fontWeight: FontWeight.bold, fontSize: 14, color: Constants.darkBlueGrey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.palette, size: 12, color: Colors.grey[600]),
+                      Icon(Icons.palette, size: 12, color: Colors.black54),
                       const SizedBox(width: 4),
                       Text(item.color,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600])),
+                          style: const TextStyle(color: Colors.black87, fontSize: 12)),
                       const Spacer(),
                       Text(item.category,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                          )),
+                           style: const TextStyle(
+                             color: Colors.black87,
+                            )),
                     ],
                   ),
                 ],

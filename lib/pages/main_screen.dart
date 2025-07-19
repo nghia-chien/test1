@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../utils/responsive_helper.dart';
+import '../constants/constants.dart';
 import 'home_page.dart';
 import 'feed_page.dart';
 import 'closet_page.dart';
 import 'ai_mix_page.dart';
 import 'notification.dart';
 import 'profile_page2.dart';
-import 'profile_page1.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -79,14 +79,14 @@ class _MainScreenState extends State<MainScreen> {
     ),
   ];
 
-  final List<Widget> _pages = const [
-    HomePage(key: PageStorageKey('home')),
-    FeedPage(key: PageStorageKey('feed')),
-    ClosetPage(key: PageStorageKey('closet')),
-    AiMixPage(key: PageStorageKey('aimix')),
-    NotificationPanel(key: PageStorageKey('notify')),
-    SettingsPage(key: PageStorageKey('settings')),
-    ProfilePage(key: PageStorageKey('profile')),
+  final List<Widget> _pages = [
+    const HomePage(key: PageStorageKey('home')),
+    const FeedPage(key: PageStorageKey('feed')),
+    const ClosetPage(key: PageStorageKey('closet')),
+    const AiMixPage(key: PageStorageKey('aimix')),
+    const NotificationPanel(key: PageStorageKey('notify')),
+    const SettingsPage(key: PageStorageKey('settings')),
+    ProfilePage(key: const PageStorageKey('profile')),
   ];
 
   void _onItemTapped(int index) {
@@ -114,35 +114,83 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isWideScreen = ResponsiveHelper.isDesktop(context) || ResponsiveHelper.isTablet(context);
+Widget build(BuildContext context) {
+  final isWideScreen = ResponsiveHelper.isDesktop(context) || ResponsiveHelper.isTablet(context);
+  final isHomeMobile = !isWideScreen && _selectedIndex == 0;
 
-    return Scaffold(
-      appBar: isWideScreen ? null : AppBar(
-        backgroundColor: const Color(0xFFECF0F1),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.black),
-            onPressed: _showNotifications,
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.black),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage1()));
-            },
-          ),
-        ],
-      ),
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      body: isWideScreen
+  return Scaffold(
+    appBar: isHomeMobile
+        ? PreferredSize(
+            preferredSize: const Size.fromHeight(110),
+            child: AppBar(
+              backgroundColor: Constants.pureWhite,
+              elevation: 0,
+              automaticallyImplyLeading: false,
+              flexibleSpace: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 18, right: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              color: Constants.primaryBlue,
+                              padding: const EdgeInsets.all(8),
+                              child: Image.asset(
+                                'images/logo.png',
+                                width: 40,
+                                height: 20,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'With honor. Be you',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Constants.darkBlueGrey,
+                              fontWeight: FontWeight.normal,
+                              letterSpacing: 0.2,
+                              fontFamily: 'BeautiqueDisplay',
+                            ),
+                          ),
+                          SizedBox(height: 5), // Thêm khoảng cách dưới cùng để tránh overflow
+                        ],
+                      ),
+                      const Spacer(),
+                      // Các icon
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, color: Constants.darkBlueGrey, size: 25),
+                        onPressed: _showNotifications,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.account_circle_outlined, color: Constants.darkBlueGrey, size: 25),
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage(key: const PageStorageKey('profile'))));
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+        : null,
+
+    backgroundColor: Constants.pureWhite,
+
+    body: isWideScreen
         ? Row(
             children: [
-              _buildSidebar(theme),
+              _buildSidebar(),
               Expanded(
                 child: Container(
-                  color: const Color(0xFFA3C7E6), // ✅ sửa từ BoxDecoration sang color đơn giản
+                  color: Colors.white,
                   child: IndexedStack(
                     index: _selectedIndex,
                     children: _pages,
@@ -151,49 +199,59 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ],
           )
-          : Column(
-        children: [
-          Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color.fromARGB(255, 125, 125, 123),
-                    ),
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: _pages,
-                    ),
-            ),
+        : Column(
+            children: [
+              Expanded(
+                child: Container(
+                  color: Constants.pureWhite,
+                  child: IndexedStack(
+                    index: _selectedIndex,
+                    children: _pages,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      bottomNavigationBar: isWideScreen
-          ? null
-          : BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-              selectedItemColor: const Color.fromARGB(255, 167, 248, 63),
-              unselectedItemColor: const Color.fromARGB(255, 233, 233, 233),
-              backgroundColor: const Color.fromARGB(255, 0, 70, 147),
-              elevation: 8,
-              items: _sidebarItems.take(5).map((item) => BottomNavigationBarItem(
-                    icon: Icon(item.icon),
-                    activeIcon: Icon(item.selectedIcon),
-                    label: item.label,
-                  )).toList(),
-            ),
-    );
-  }
 
-  Widget _buildSidebar(ThemeData theme) {
+    bottomNavigationBar: isWideScreen
+        ? null
+        : BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: Constants.darkBlueGrey,
+            unselectedItemColor: Constants.secondaryGrey,
+            selectedIconTheme: const IconThemeData(color: Constants.darkBlueGrey),
+            unselectedIconTheme: const IconThemeData(color: Constants.secondaryGrey),
+            backgroundColor: Constants.pureWhite,
+            elevation: 8,
+            showSelectedLabels: true,
+            showUnselectedLabels: false,
+            items: _sidebarItems.take(5).map((item) => BottomNavigationBarItem(
+                  icon: Icon(item.icon),
+                  activeIcon: Icon(item.selectedIcon),
+                  label: item.label,
+                )).toList(),
+          ),
+  );
+}
+
+
+
+
+
+
+
+
+  Widget _buildSidebar() {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       width: _isCollapsed ? 80 : 280,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Constants.pureWhite,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Constants.darkBlueGrey.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(2, 0),
           ),
@@ -229,7 +287,7 @@ class _MainScreenState extends State<MainScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(16), // ✅ bo góc
             child: Container(
-              color: const Color.fromARGB(189, 255, 0, 0), // ✅ màu nền
+              color: Constants.primaryBlue, // ✅ màu nền
               width: logoSize,
               height: logoSize,
               child: Image.asset(
@@ -245,7 +303,8 @@ class _MainScreenState extends State<MainScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Constants.darkBlueGrey,
+                fontFamily: 'BeautiqueDisplay',
               ),
             ),
             SizedBox(height: 4),
@@ -253,7 +312,8 @@ class _MainScreenState extends State<MainScreen> {
               'Thời trang thông minh',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey,
+                color: Constants.secondaryGrey,
+                fontFamily: 'BeautiqueDisplay',
               ),
             ),
           ],
@@ -263,7 +323,7 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(
                 _isCollapsed ? Icons.chevron_right : Icons.chevron_left,
                 size: 20,
-                color: Colors.grey[600],
+                color: Constants.secondaryGrey,
               ),
               onPressed: _toggleSidebar,
             ),
@@ -313,7 +373,7 @@ class _MainScreenState extends State<MainScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? const Color.fromARGB(255, 0, 0, 0).withOpacity(0.1) : Colors.transparent,
+              color: isSelected ? Constants.primaryBlue.withOpacity(0.1) : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -323,7 +383,7 @@ class _MainScreenState extends State<MainScreen> {
                     Icon(
                       icon,
                       size: 20,
-                      color: isSelected ? Colors.black : Colors.grey[600],
+                      color: isSelected ? Constants.darkBlueGrey : Constants.secondaryGrey,
                     ),
                     if (hasNotification)
                       Positioned(
@@ -348,7 +408,8 @@ class _MainScreenState extends State<MainScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        color: isSelected ? const Color.fromARGB(255, 0, 0, 0) : Colors.grey[700],
+                        color: isSelected ? Constants.darkBlueGrey : Constants.secondaryGrey,
+                        fontFamily: 'BeautiqueDisplay',
                       ),
                     ),
                   ),
@@ -357,7 +418,8 @@ class _MainScreenState extends State<MainScreen> {
                       shortcut,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[500],
+                        color: Constants.secondaryGrey,
+                        fontFamily: 'BeautiqueDisplay',
                       ),
                     ),
                 ],
@@ -375,7 +437,7 @@ class _MainScreenState extends State<MainScreen> {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: Colors.grey[200]!,
+            color: Constants.secondaryGrey.withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -411,14 +473,15 @@ class _MainScreenState extends State<MainScreen> {
               Icon(
                 icon,
                 size: 20,
-                color: Colors.grey[600],
+                color: Constants.secondaryGrey,
               ),
               const SizedBox(width: 12),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[700],
+                  color: Constants.secondaryGrey,
+                  fontFamily: 'BeautiqueDisplay',
                 ),
               ),
             ],
@@ -440,7 +503,7 @@ class _MainScreenState extends State<MainScreen> {
               ? Center( 
                   child: CircleAvatar(
                     radius: 16,
-                    backgroundColor: const Color(0xFF6366F1),
+                    backgroundColor: Constants.primaryBlue,
                     backgroundImage: _imageUrl != null ? NetworkImage(_imageUrl!) : null,
                     child: _imageUrl == null
                         ? const Text(
@@ -449,6 +512,7 @@ class _MainScreenState extends State<MainScreen> {
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
+                              fontFamily: 'BeautiqueDisplay',
                             ),
                           )
                         : null,
@@ -459,7 +523,7 @@ class _MainScreenState extends State<MainScreen> {
                   children: [
                     CircleAvatar(
                       radius: 16,
-                      backgroundColor: const Color(0xFF6366F1),
+                      backgroundColor: Constants.primaryBlue,
                       backgroundImage: _imageUrl != null ? NetworkImage(_imageUrl!) : null,
                       child: _imageUrl == null
                           ? const Text(
@@ -468,6 +532,7 @@ class _MainScreenState extends State<MainScreen> {
                                 color: Colors.white,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
+                                fontFamily: 'BeautiqueDisplay',
                               ),
                             )
                           : null,
@@ -482,7 +547,8 @@ class _MainScreenState extends State<MainScreen> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: Constants.darkBlueGrey,
+                              fontFamily: 'BeautiqueDisplay',
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -490,7 +556,8 @@ class _MainScreenState extends State<MainScreen> {
                             "${email ?? 'Loading...'}",
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Constants.secondaryGrey,
+                              fontFamily: 'BeautiqueDisplay',
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -500,7 +567,7 @@ class _MainScreenState extends State<MainScreen> {
                     const Icon(
                       Icons.expand_more,
                       size: 16,
-                      color: Colors.grey,
+                      color: Constants.secondaryGrey,
                     ),
                   ],
                 ),

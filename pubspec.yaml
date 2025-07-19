@@ -63,11 +63,11 @@ dependencies:
   cached_network_image: ^3.4.1
   animated_text_kit: ^4.2.3
   flutter_staggered_grid_view: ^0.6.2
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
-    sdk: flutter
-  flutter_localizations:
     sdk: flutter
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -99,6 +99,24 @@ flutter:
         - asset: assets/fonts/Montserrat-Regular.ttf
         - asset: assets/fonts/Montserrat-Bold.ttf
           weight: 700
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+    - family: BeautiqueDisplay
+      fonts:
+        - asset: assets/fonts/BeautiqueDisplay-Regular.otf
+        - asset: assets/fonts/BeautiqueDisplay-Medium.otf
+          weight: 500
+        - asset: assets/fonts/BeautiqueDisplay-Bold.otf
+          weight: 700
+        - asset: assets/fonts/BeautiqueDisplay-Black.otf
+          weight: 900
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

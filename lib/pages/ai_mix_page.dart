@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
 import '../models/outfit.dart';
 import '../utils/responsive_helper.dart';
+import '../constants/constants.dart';
 import 'outfit_detail_page.dart';
 
 class AiMixPage extends StatefulWidget {
@@ -26,6 +27,9 @@ class _AiMixPageState extends State<AiMixPage> {
   Set<String> _savedOutfitHashes = {};
   String _outfitHash(List<ClothingItem> items) => items.map((i) => i.id).toSet().join(',');
 
+  final Color primaryBlue = Constants.primaryBlue;
+  final Color lightGrey = Constants.secondaryGrey.withValues(alpha: 0.2);
+  final Color midGrey = Constants.secondaryGrey;
 
   // Color matching system
   final Map<String, List<String>> _colorGroups = {
@@ -398,25 +402,17 @@ class _AiMixPageState extends State<AiMixPage> {
     final crossAxisCount = ResponsiveHelper.getCrossAxisCount(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Constants.pureWhite,
       appBar: AppBar(
-        title: const Text(
-          'AI Outfit Generator',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w300,
-          ),
+        title: const Text('AI Outfit Generator',
+          style: TextStyle(color: Constants.darkBlueGrey, fontWeight: FontWeight.w300, fontSize: 20),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Constants.pureWhite,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Constants.darkBlueGrey),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: Colors.grey[200],
-          ),
+          child: Container(height: 1, color: lightGrey),
         ),
       ),
       body: Column(
@@ -509,7 +505,7 @@ class _AiMixPageState extends State<AiMixPage> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _generateOutfits,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[600],
+                            backgroundColor: primaryBlue,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
@@ -533,7 +529,7 @@ class _AiMixPageState extends State<AiMixPage> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey[300]!),
+                              side: BorderSide(color: lightGrey),
                             ),
                             elevation: 0,
                           ),
@@ -555,9 +551,9 @@ class _AiMixPageState extends State<AiMixPage> {
             child: Container(
               color: Colors.grey[50],
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                        valueColor: AlwaysStoppedAnimation<Color>(primaryBlue),
                       ),
                     )
                   : _suggestedOutfits.isEmpty
@@ -614,7 +610,7 @@ class _AiMixPageState extends State<AiMixPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Constants.darkBlueGrey.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -638,7 +634,7 @@ class _AiMixPageState extends State<AiMixPage> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.bookmark_border, size: 20),
-                    color: Colors.grey[600],
+                    color: midGrey,
                     onPressed: () => _saveOutfit(outfit),
                   ),
                 ],

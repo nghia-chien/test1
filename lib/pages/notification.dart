@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import '../utils/responsive_helper.dart';
 
 class NotificationPanel extends StatefulWidget {
@@ -75,9 +76,9 @@ class _NotificationPanelState extends State<NotificationPanel> {
   @override
   Widget build(BuildContext context) {
     final isWideScreen = ResponsiveHelper.isTablet(context) || ResponsiveHelper.isDesktop(context);
-    final bgColor = isDarkMode ? Colors.black : const Color(0xFFF0F1F5);
-    final cardColor = isDarkMode ? Colors.grey[850] : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final bgColor = isDarkMode ? Constants.darkBlueGrey : const Color(0xFFF0F1F5);
+    final cardColor = isDarkMode ? Constants.darkBlueGrey : Constants.pureWhite;
+    final textColor = isDarkMode ? Constants.pureWhite : Constants.darkBlueGrey;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -121,7 +122,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
                       height: 80,
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: Constants.secondaryGrey.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(24),
                       ),
                     ),
@@ -147,7 +148,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
                       const SizedBox(height: 8),
                       Text(
                         'Thông báo sẽ hiển thị khi có người thích hoặc bình luận bài viết của bạn.',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                        style: TextStyle(color: Constants.secondaryGrey.withOpacity(0.6), fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
@@ -183,7 +184,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.shade300,
+                            color: Constants.secondaryGrey.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -222,12 +223,12 @@ class _NotificationPanelState extends State<NotificationPanel> {
                                   ),
                                 Text(
                                   '"$content"',
-                                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                                  style: TextStyle(fontSize: 13, color: Constants.secondaryGrey.withOpacity(0.6)),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   formattedDate,
-                                  style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                                  style: TextStyle(fontSize: 11, color: Constants.secondaryGrey.withOpacity(0.4)),
                                 ),
                               ],
                             ),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import '../models/clothing_item.dart';
 
 class OutfitDetailPage extends StatelessWidget {
@@ -64,7 +65,7 @@ class OutfitDetailPage extends StatelessWidget {
                             fit: BoxFit.cover,
                             width: double.infinity,
                             errorBuilder: (_, __, ___) => const Center(
-                              child: Icon(Icons.broken_image, color: Colors.grey),
+                              child: Icon(Icons.broken_image, color: Constants.secondaryGrey),
                             ),
                           ),
                         ),
@@ -79,7 +80,7 @@ class OutfitDetailPage extends StatelessWidget {
                               ),
                               Text(
                                 item.category,
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                style: const TextStyle(fontSize: 12, color: Constants.secondaryGrey),
                               ),
                             ],
                           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -45,7 +46,7 @@ class _ProfilePageState extends State<ProfilePage1> {
             children: [
               const SizedBox(height: 20),
               Container(
-                color: Colors.white,
+                color: Constants.pureWhite,
                 child: Column(
                   children: [
                     _buildTabBar(),
@@ -76,7 +77,7 @@ class _ProfilePageState extends State<ProfilePage1> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: isActive ? Color(0xFF5B67CA) : Colors.black54,
+                  color: isActive ? Constants.primaryBlue : Constants.darkBlueGrey.withOpacity(0.6),
                 ),
               ),
               if (isActive)
@@ -84,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage1> {
                   margin: const EdgeInsets.only(top: 4),
                   height: 2,
                   width: 24,
-                  color: Color(0xFF5B67CA),
+                  color: Constants.primaryBlue,
                 )
             ],
           ),
@@ -154,11 +155,11 @@ class _ProfilePageState extends State<ProfilePage1> {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                  Icon(Icons.error_outline, size: 48, color: Constants.secondaryGrey),
                   const SizedBox(height: 16),
                   Text(
                     'Lỗi tải dữ liệu: ${snapshot.error}',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Constants.secondaryGrey),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -173,11 +174,11 @@ class _ProfilePageState extends State<ProfilePage1> {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.inbox_outlined, size: 48, color: Colors.grey),
+                  Icon(Icons.inbox_outlined, size: 48, color: Constants.secondaryGrey),
                   SizedBox(height: 16),
                   Text(
                     'Chưa có dữ liệu',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                    style: TextStyle(color: Constants.secondaryGrey, fontSize: 16),
                   ),
                 ],
               ),
