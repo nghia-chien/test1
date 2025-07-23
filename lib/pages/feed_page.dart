@@ -486,7 +486,7 @@ class _FeedPageState extends State<FeedPage> {
 
   Widget _buildStaggeredGrid(List<DocumentSnapshot> posts) {
     return MasonryGridView.count(
-      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 1,
       padding: const EdgeInsets.all(12),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,

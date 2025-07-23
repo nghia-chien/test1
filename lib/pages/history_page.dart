@@ -56,9 +56,9 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFECF0F1),
+      backgroundColor: Constants.pureWhite,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFECF0F1),
+        backgroundColor: Constants.pureWhite,
         elevation: 0,
         title: const Text(
           'Lịch sử hoạt động',
@@ -73,15 +73,15 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_sweep, color: Colors.red),
+            icon: const Icon(Icons.delete_sweep, color: Constants.darkBlueGrey),
             onPressed: _showClearAllDialog,
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Constants.darkBlueGrey,
+          labelColor: Constants.primaryBlue,
           unselectedLabelColor: Constants.secondaryGrey,
-          indicatorColor: const Color.fromARGB(255, 95, 11, 240),
+          indicatorColor: Constants.primaryBlue,
           tabs: const [
             Tab(text: 'Tất cả'),
             Tab(text: 'Thống kê'),
@@ -109,7 +109,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                 : ActivityHistoryService.getActivitiesByAction(_selectedFilter),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator(color: Constants.primaryBlue));
               }
 
               if (snapshot.hasError) {
@@ -188,20 +188,20 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_getFilterLabel(filter)),
+                  Text(_getFilterLabel(filter), style: TextStyle(color: isSelected ? Constants.primaryBlue : Constants.secondaryGrey)),
                   if (count > 0) ...[
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isSelected ? Constants.pureWhite : Constants.secondaryGrey.withValues(alpha: 0.3),
+                        color: isSelected ? Constants.primaryBlue.withOpacity(0.1) : Constants.secondaryGrey.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         count.toString(),
                         style: TextStyle(
                           fontSize: 12,
-                          color: isSelected ? Constants.darkBlueGrey : Constants.secondaryGrey.withValues(alpha: 0.7),
+                          color: isSelected ? Constants.primaryBlue : Constants.secondaryGrey,
                         ),
                       ),
                     ),
@@ -215,8 +215,8 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                 });
               },
               backgroundColor: Constants.pureWhite,
-              selectedColor: const Color.fromARGB(255, 95, 11, 240).withValues(alpha: 0.2),
-              checkmarkColor: const Color.fromARGB(255, 95, 11, 240),
+              selectedColor: Constants.primaryBlue.withOpacity(0.15),
+              checkmarkColor: Constants.primaryBlue,
             ),
           );
         },
@@ -255,7 +255,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Constants.darkBlueGrey.withValues(alpha: 0.1),
+            color: Constants.primaryBlue.withOpacity(0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -288,12 +288,12 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: activity.actionColor.withValues(alpha: 0.1),
+            color: Constants.primaryBlue.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             activity.actionIcon,
-            color: activity.actionColor,
+            color: Constants.primaryBlue,
             size: 24,
           ),
         ),
@@ -302,6 +302,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
           style: const TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
+            color: Constants.darkBlueGrey,
           ),
         ),
         subtitle: Column(
@@ -327,7 +328,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                   placeholder: (context, url) => Container(
                     width: 60,
                     height: 60,
-                    color: Constants.secondaryGrey.withValues(alpha: 0.2),
+                    color: Constants.secondaryGrey.withOpacity(0.1),
                     child: const Center(
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
@@ -335,7 +336,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                   errorWidget: (context, url, error) => Container(
                     width: 60,
                     height: 60,
-                    color: Constants.secondaryGrey.withValues(alpha: 0.2),
+                    color: Constants.secondaryGrey.withOpacity(0.1),
                     child: const Icon(Icons.broken_image),
                   ),
                 ),
@@ -344,7 +345,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
           ],
         ),
         trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
+          icon: const Icon(Icons.more_vert, color: Constants.secondaryGrey),
           onSelected: (value) {
             if (value == 'delete') {
               _showDeleteDialog(activity);
@@ -355,7 +356,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete, color: Colors.red),
+                  Icon(Icons.delete, color: Constants.darkBlueGrey),
                   SizedBox(width: 8),
                   Text('Xóa', style: TextStyle(color: Colors.red)),
                 ],
@@ -372,7 +373,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
       future: ActivityHistoryService.getActivityStats(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: Constants.primaryBlue));
         }
 
         final stats = snapshot.data ?? {};
@@ -387,7 +388,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                 'Tổng hoạt động',
                 totalActivities.toString(),
                 Icons.analytics,
-                Colors.blue,
+                Constants.primaryBlue,
               ),
               const SizedBox(height: 16),
               const Text(
@@ -415,7 +416,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Constants.darkBlueGrey.withValues(alpha: 0.1),
+            color: Constants.primaryBlue.withOpacity(0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -427,10 +428,10 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: Constants.primaryBlue.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 30),
+            child: Icon(icon, color: Constants.primaryBlue, size: 30),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -450,6 +451,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
+                    color: Constants.darkBlueGrey,
                   ),
                 ),
               ],
@@ -487,7 +489,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Constants.darkBlueGrey.withValues(alpha: 0.05),
+              color: Constants.primaryBlue.withOpacity(0.03),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -499,12 +501,12 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: activity.actionColor.withValues(alpha: 0.1),
+                color: Constants.primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 activity.actionIcon,
-                color: activity.actionColor,
+                color: Constants.primaryBlue,
                 size: 20,
               ),
             ),
@@ -515,19 +517,20 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: Constants.darkBlueGrey,
                 ),
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: activity.actionColor.withValues(alpha: 0.1),
+                color: Constants.primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 count.toString(),
-                style: TextStyle(
-                  color: activity.actionColor,
+                style: const TextStyle(
+                  color: Constants.primaryBlue,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -598,10 +601,10 @@ class PostDetailPage extends StatelessWidget {
         future: FirebaseFirestore.instance.collection('posts').doc(postId).get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Constants.primaryBlue));
           }
           if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text('Không tìm thấy bài viết.'));
+            return const Center(child: Text('Không tìm thấy bài viết.', style: TextStyle(color: Constants.secondaryGrey)));
           }
           final data = snapshot.data!.data() as Map<String, dynamic>;
           return Padding(
@@ -616,7 +619,7 @@ class PostDetailPage extends StatelessWidget {
                     fit: BoxFit.cover,
                   ),
                 const SizedBox(height: 16),
-                Text(data['content'] ?? '', style: const TextStyle(fontSize: 16)),
+                Text(data['content'] ?? '', style: const TextStyle(fontSize: 16, color: Constants.darkBlueGrey)),
                 const SizedBox(height: 8),
                 Text('Tác giả: ${data['username'] ?? ''}', style: const TextStyle(color: Constants.secondaryGrey)),
               ],
@@ -647,11 +650,11 @@ class RelatedPostsPage extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Constants.primaryBlue));
           }
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
-            return const Center(child: Text('Không có bài nào.'));
+            return const Center(child: Text('Không có bài nào.', style: TextStyle(color: Constants.secondaryGrey)));
           }
           return ListView.builder(
             itemCount: docs.length,
@@ -659,7 +662,7 @@ class RelatedPostsPage extends StatelessWidget {
               final activity = ActivityHistory.fromFirestore(docs[index]);
               final postId = activity.metadata?['postId'];
               return ListTile(
-                leading: Icon(activity.actionIcon, color: activity.actionColor),
+                leading: Icon(activity.actionIcon, color: Constants.primaryBlue),
                 title: Text(activity.description),
                 subtitle: Text(activity.timeAgo),
                 onTap: postId != null

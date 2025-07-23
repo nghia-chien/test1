@@ -3,6 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 
 class EditOutfitPage extends StatefulWidget {
   const EditOutfitPage({super.key});
@@ -26,12 +27,6 @@ class _EditOutfitPageState extends State<EditOutfitPage>
   late Animation<double> _fadeAnimation;
 
   // Color palette
-  static const Color primaryBlack = Color(0xFF010810);
-  static const Color primaryGray = Color(0xFF7D7F85);
-  static const Color primaryBlue = Color(0xFF406690);
-  static const Color primaryWhite = Colors.white;
-  static const Color lightGray = Color(0xFFF8F9FA);
-
   final List<String> _categories = [
     'Tất cả', 'Áo', 'Quần', 'Váy', 'Giày', 'Phụ kiện'
   ];
@@ -172,18 +167,18 @@ class _EditOutfitPageState extends State<EditOutfitPage>
 
     showDialog(
       context: context,
-      barrierColor: primaryBlack.withOpacity(0.6),
+      barrierColor: Constants.darkBlueGrey.withOpacity(0.6),
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
           child: Container(
             height: 500,
             decoration: BoxDecoration(
-              color: primaryWhite,
+              color: Constants.pureWhite,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: primaryBlack.withOpacity(0.2),
+                  color: Constants.darkBlueGrey.withOpacity(0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -194,7 +189,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: lightGray,
+                    color: Constants.secondaryGrey.withOpacity(0.1),
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                   ),
                   child: Row(
@@ -203,7 +198,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                         width: 4,
                         height: 20,
                         decoration: BoxDecoration(
-                          color: primaryBlue,
+                          color: Constants.primaryBlue,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -214,13 +209,13 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: primaryBlack,
+                            color: Constants.darkBlueGrey,
                           ),
                         ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: Icon(Icons.close, color: primaryGray),
+                        icon: Icon(Icons.close, color: Constants.secondaryGrey),
                       ),
                     ],
                   ),
@@ -234,14 +229,14 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                               Icon(
                                 Icons.style_outlined,
                                 size: 48,
-                                color: primaryGray.withOpacity(0.5),
+                                color: Constants.secondaryGrey.withOpacity(0.5),
                               ),
                               const SizedBox(height: 12),
                               Text(
                                 'Chưa có outfit nào được lưu',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: primaryGray,
+                                  color: Constants.secondaryGrey,
                                 ),
                               ),
                             ],
@@ -256,14 +251,14 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               decoration: BoxDecoration(
-                                color: primaryWhite,
+                                color: Constants.pureWhite,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: primaryGray.withOpacity(0.2),
+                                  color: Constants.secondaryGrey.withOpacity(0.2),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: primaryBlack.withOpacity(0.05),
+                                    color: Constants.darkBlueGrey.withOpacity(0.05),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -274,24 +269,24 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: primaryBlue.withOpacity(0.1),
+                                    color: Constants.primaryBlue.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Icon(Icons.style, color: primaryBlue),
+                                  child: Icon(Icons.style, color: Constants.primaryBlue),
                                 ),
                                 title: Text(
                                   outfit['prompt'] ?? 'Outfit ${index + 1}',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: primaryBlack,
+                                    color: Constants.darkBlueGrey,
                                   ),
                                 ),
                                 subtitle: Text(
                                   '${(outfit['itemIds'] as List?)?.length ?? 0} món đồ',
-                                  style: TextStyle(color: primaryGray),
+                                  style: TextStyle(color: Constants.secondaryGrey),
                                 ),
-                                trailing: Icon(Icons.arrow_forward_ios, color: primaryGray, size: 16),
+                                trailing: Icon(Icons.arrow_forward_ios, color: Constants.secondaryGrey, size: 16),
                                 onTap: () => _selectOutfit(outfit, doc.id),
                               ),
                             );
@@ -309,17 +304,17 @@ class _EditOutfitPageState extends State<EditOutfitPage>
   Widget _buildCard({required Widget child, bool isSelected = false}) {
     return Container(
       decoration: BoxDecoration(
-        color: primaryWhite,
+        color: Constants.pureWhite,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected ? primaryBlue : primaryGray.withOpacity(0.1),
+          color: isSelected ? Constants.primaryBlue : Constants.secondaryGrey.withOpacity(0.1),
           width: isSelected ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isSelected 
-                ? primaryBlue.withOpacity(0.2)
-                : primaryBlack.withOpacity(0.05),
+                ? Constants.primaryBlue.withOpacity(0.2)
+                : Constants.darkBlueGrey.withOpacity(0.05),
             blurRadius: isSelected ? 12 : 8,
             offset: const Offset(0, 4),
           ),
@@ -332,64 +327,35 @@ class _EditOutfitPageState extends State<EditOutfitPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightGray,
+      backgroundColor: Constants.secondaryGrey.withOpacity(0.1),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: Column(
             children: [
               // App Bar
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: primaryWhite,
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryBlack.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+              AppBar(
+                backgroundColor: Constants.pureWhite,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Constants.darkBlueGrey),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: primaryBlack,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(Icons.arrow_back, color: primaryWhite),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Chỉnh sửa phối đồ',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: primaryBlack,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _showSelectOutfitDialog,
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: primaryBlue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(Icons.folder_open, color: primaryWhite),
-                      ),
-                    ),
-                  ],
+                centerTitle: true,
+                title: const Text(
+                  'Chỉnh sửa phối đồ',
+                  style: TextStyle(
+                    color: Constants.darkBlueGrey,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                  ),
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.folder_open, color: Constants.primaryBlue),
+                    onPressed: _showSelectOutfitDialog,
+                  ),
+                ],
               ),
               
               Expanded(
@@ -402,17 +368,17 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                       _buildCard(
                         child: TextField(
                           controller: _promptController,
-                          style: TextStyle(fontSize: 16, color: primaryBlack),
+                          style: TextStyle(fontSize: 16, color: Constants.darkBlueGrey),
                           decoration: InputDecoration(
                             labelText: 'Tên phối đồ',
-                            labelStyle: TextStyle(color: primaryGray),
+                            labelStyle: TextStyle(color: Constants.secondaryGrey),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
                             fillColor: Colors.transparent,
-                            prefixIcon: Icon(Icons.edit, color: primaryBlue),
+                            prefixIcon: Icon(Icons.edit, color: Constants.darkBlueGrey),
                             contentPadding: EdgeInsets.all(16),
                           ),
                         ),
@@ -430,14 +396,14 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                                 controller: _searchController,
                                 decoration: InputDecoration(
                                   hintText: 'Tìm kiếm...',
-                                  hintStyle: TextStyle(color: primaryGray.withOpacity(0.6)),
+                                  hintStyle: TextStyle(color: Constants.secondaryGrey.withOpacity(0.6)),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     borderSide: BorderSide.none,
                                   ),
                                   filled: true,
                                   fillColor: Colors.transparent,
-                                  prefixIcon: Icon(Icons.search, color: primaryGray),
+                                  prefixIcon: Icon(Icons.search, color: Constants.darkBlueGrey),
                                   contentPadding: EdgeInsets.all(16),
                                 ),
                               ),
@@ -449,12 +415,12 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2.2),
                               child: DropdownButton<String>(
                                 value: _selectedCategory,
-                                icon: Icon(Icons.tune, color: primaryBlue),
+                                icon: Icon(Icons.tune, color: Constants.primaryBlue),
                                 underline: const SizedBox(),
                                 items: _categories
                                     .map((cat) => DropdownMenuItem(
                                           value: cat,
-                                          child: Text(cat, style: TextStyle(color: primaryBlack)),
+                                          child: Text(cat, style: TextStyle(color: Constants.darkBlueGrey)),
                                         ))
                                     .toList(),
                                 onChanged: (val) {
@@ -479,7 +445,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                               width: 4,
                               height: 20,
                               decoration: BoxDecoration(
-                                color: primaryBlue,
+                                color: Constants.primaryBlue,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -489,7 +455,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
-                                color: primaryBlack,
+                                color: Constants.darkBlueGrey,
                               ),
                             ),
                           ],
@@ -514,7 +480,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                                       Container(
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: primaryBlue, width: 2),
+                                          border: Border.all(color: Constants.primaryBlue, width: 2),
                                         ),
                                         child: ClipRRect(
                                           borderRadius: BorderRadius.circular(10),
@@ -526,8 +492,8 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                                                   height: double.infinity,
                                                 )
                                               : Container(
-                                                  color: lightGray,
-                                                  child: Icon(Icons.checkroom, color: primaryGray),
+                                                  color: Constants.secondaryGrey.withOpacity(0.1),
+                                                  child: Icon(Icons.checkroom, color: Constants.secondaryGrey),
                                                 ),
                                         ),
                                       ),
@@ -538,10 +504,10 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                                           width: 20,
                                           height: 20,
                                           decoration: BoxDecoration(
-                                            color: primaryBlack,
+                                            color: Constants.darkBlueGrey,
                                             borderRadius: BorderRadius.circular(10),
                                           ),
-                                          child: Icon(Icons.close, color: primaryWhite, size: 14),
+                                          child: Icon(Icons.close, color: Constants.pureWhite, size: 14),
                                         ),
                                       ),
                                     ],
@@ -561,7 +527,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                             width: 4,
                             height: 20,
                             decoration: BoxDecoration(
-                              color: primaryGray,
+                              color: Constants.secondaryGrey,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -571,7 +537,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: primaryBlack,
+                              color: Constants.darkBlueGrey,
                             ),
                           ),
                         ],
@@ -617,10 +583,10 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                                                     fit: BoxFit.cover,
                                                   )
                                                 : Container(
-                                                    color: lightGray,
+                                                    color: Constants.secondaryGrey.withOpacity(0.1),
                                                     child: Icon(
                                                       Icons.checkroom,
-                                                      color: primaryGray,
+                                                      color: Constants.secondaryGrey,
                                                       size: 32,
                                                     ),
                                                   ),
@@ -634,10 +600,10 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                                               width: 24,
                                               height: 24,
                                               decoration: BoxDecoration(
-                                                color: primaryBlue,
+                                                color: Constants.primaryBlue,
                                                 borderRadius: BorderRadius.circular(12),
                                               ),
-                                              child: Icon(Icons.check, color: primaryWhite, size: 16),
+                                              child: Icon(Icons.check, color: Constants.pureWhite, size: 16),
                                             ),
                                           ),
                                       ],
@@ -667,12 +633,12 @@ class _EditOutfitPageState extends State<EditOutfitPage>
               padding: const EdgeInsets.symmetric(horizontal: 24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [primaryBlue, primaryBlue.withOpacity(0.8)],
+                  colors: [Constants.primaryBlue, Constants.primaryBlue.withOpacity(0.8)],
                 ),
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryBlue.withOpacity(0.3),
+                    color: Constants.primaryBlue.withOpacity(0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -690,7 +656,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                       children: [
                         Icon(
                           _editingOutfitId != null ? Icons.update : Icons.save,
-                          color: primaryWhite,
+                          color: Constants.pureWhite,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -699,7 +665,7 @@ class _EditOutfitPageState extends State<EditOutfitPage>
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: primaryWhite,
+                            color: Constants.pureWhite,
                           ),
                         ),
                       ],

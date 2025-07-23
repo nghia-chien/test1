@@ -173,13 +173,14 @@ class _CalendarPageState extends State<CalendarPage> {
           onTap: () => setState(() => _selectedDay = date),
           child: Container(
             margin: const EdgeInsets.all(2),
+            height: 68, // tăng chiều cao cell hơn nữa
             decoration: BoxDecoration(
-                              color: _selectedDay == date ? Constants.primaryBlue.withOpacity(0.1) : Constants.pureWhite,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _selectedDay == date ? Constants.primaryBlue : Constants.secondaryGrey.withOpacity(0.3),
-                  width: 2,
-                ),
+              color: _selectedDay == date ? Constants.primaryBlue.withOpacity(0.1) : Constants.pureWhite,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _selectedDay == date ? Constants.primaryBlue : Constants.secondaryGrey.withOpacity(0.3),
+                width: 2,
+              ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -188,7 +189,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   '$day',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: _selectedDay == date ? Colors.blue : Constants.darkBlueGrey,
+                    color: _selectedDay == date ? Constants.primaryBlue : Constants.darkBlueGrey,
                   ),
                 ),
                 if (data?['outfitId'] != null)
@@ -196,7 +197,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     margin: const EdgeInsets.only(top: 4),
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: Constants.primaryBlue,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Icon(
@@ -286,13 +287,13 @@ class _CalendarPageState extends State<CalendarPage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Constants.primaryBlue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
                           'Select',
                           style: TextStyle(
-                            color: Colors.blue,
+                            color: Constants.primaryBlue,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -401,10 +402,10 @@ class _CalendarPageState extends State<CalendarPage> {
                         width: 80,
                         margin: const EdgeInsets.only(right: 12),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.blue.withOpacity(0.1) : Constants.pureWhite,
+                          color: isSelected ? Constants.primaryBlue.withOpacity(0.1) : Constants.pureWhite,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSelected ? Colors.blue : Constants.secondaryGrey.withOpacity(0.3),
+                            color: isSelected ? Constants.primaryBlue : Constants.secondaryGrey.withOpacity(0.3),
                             width: 2,
                           ),
                         ),
@@ -415,7 +416,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               DateFormat.E('vi').format(date),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.blue : Constants.darkBlueGrey,
+                                color: isSelected ? Constants.primaryBlue : Constants.darkBlueGrey,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -423,7 +424,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               date.day.toString(),
                               style: TextStyle(
                                 fontSize: 16,
-                                color: isSelected ? Colors.blue : Constants.darkBlueGrey,
+                                color: isSelected ? Constants.primaryBlue : Constants.darkBlueGrey,
                               ),
                             ),
                             if (data?['outfitId'] != null)
@@ -431,7 +432,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                 margin: const EdgeInsets.only(top: 4),
                                 padding: const EdgeInsets.all(2),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue,
+                                  color: Constants.primaryBlue,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Icon(
@@ -459,7 +460,7 @@ class _CalendarPageState extends State<CalendarPage> {
     final daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
     
     return Scaffold(
-      backgroundColor: Constants.secondaryGrey.withOpacity(0.1),
+      backgroundColor: Constants.pureWhite,
       appBar: AppBar(
         backgroundColor: Constants.pureWhite,
         elevation: 0,
@@ -479,7 +480,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 _selectedDay = null;
               }),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Constants.primaryBlue,
                 foregroundColor: Constants.pureWhite,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -507,7 +508,7 @@ class _CalendarPageState extends State<CalendarPage> {
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                valueColor: AlwaysStoppedAnimation<Color>(Constants.primaryBlue),
               ),
             )
           : Column(
@@ -602,7 +603,7 @@ class _CalendarPageState extends State<CalendarPage> {
                           builder: (context, snapshot) {
                             if (!snapshot.hasData) {
                               return const CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                valueColor: AlwaysStoppedAnimation<Color>(Constants.primaryBlue),
                               );
                             }
                             
@@ -613,7 +614,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                   DateFormat('yyyy-MM-dd').format(_selectedDay!),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: Constants.primaryBlue,
                                   foregroundColor: Constants.pureWhite,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -683,7 +684,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                             DateFormat('yyyy-MM-dd').format(_selectedDay!),
                                           ),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue,
+                                            backgroundColor: Constants.primaryBlue,
                                             foregroundColor: Constants.pureWhite,
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
@@ -774,7 +775,7 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+          valueColor: AlwaysStoppedAnimation<Color>(Constants.primaryBlue),
         ),
       );
     }

@@ -120,66 +120,68 @@ Widget build(BuildContext context) {
 
   return Scaffold(
     appBar: isHomeMobile
-        ? PreferredSize(
-            preferredSize: const Size.fromHeight(110),
-            child: AppBar(
-              backgroundColor: Constants.pureWhite,
-              elevation: 0,
-              automaticallyImplyLeading: false,
-              flexibleSpace: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16, top: 18, right: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              color: Constants.primaryBlue,
-                              padding: const EdgeInsets.all(8),
-                              child: Image.asset(
-                                'images/logo.png',
-                                width: 40,
-                                height: 20,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'With honor. Be you',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Constants.darkBlueGrey,
-                              fontWeight: FontWeight.normal,
-                              letterSpacing: 0.2,
-                              fontFamily: 'BeautiqueDisplay',
-                            ),
-                          ),
-                          SizedBox(height: 5), // Thêm khoảng cách dưới cùng để tránh overflow
-                        ],
-                      ),
-                      const Spacer(),
-                      // Các icon
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined, color: Constants.darkBlueGrey, size: 25),
-                        onPressed: _showNotifications,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.account_circle_outlined, color: Constants.darkBlueGrey, size: 25),
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage(key: const PageStorageKey('profile'))));
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+        ? AppBar(
+  backgroundColor: Colors.black,
+  elevation: 0,
+  automaticallyImplyLeading: false,
+  toolbarHeight: 80,
+  titleSpacing: 8, // Đổi số này để chỉnh khoảng cách lề trái
+  title: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Image.asset(
+              'images/logo.png',
+              width: 120,
+              height: 60,
+              fit: BoxFit.contain,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 12.0, top: 0), // chỉnh lề trái dòng slogan
+            child: const Text(
+              "With Honor. be You",
+              style: TextStyle(
+                fontSize: 11, // chỉnh font size nhỏ
+                color: Colors.white,
+                fontFamily: 'BeautiqueDisplay',
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.2,
               ),
             ),
-          )
+          ),
+        ],
+      ),
+      const Spacer(),
+      Padding(
+        padding: EdgeInsets.only(top: 12.0), // Đưa icon xuống dưới
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+              onPressed: _showNotifications,
+            ),
+            IconButton(
+              icon: const Icon(Icons.account_circle_outlined, color: Colors.white, size: 28),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfilePage(key: PageStorageKey('profile')),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)
         : null,
 
     backgroundColor: Constants.pureWhite,

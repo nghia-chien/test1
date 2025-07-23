@@ -31,6 +31,14 @@ class _HomePageState extends State<HomePage> {
   String? _userName;
   final TextEditingController _searchController = TextEditingController();
 
+  // Recent Outfits demo images (bạn có thể thay bằng ảnh thật hoặc link mạng)
+  final List<String> outfitImagePaths = [
+    'images/logo.png',
+    'images/logo_dt.png',
+    'images/banner.png',
+    // Thêm các ảnh khác nếu có
+  ];
+
   List<AnimatedText> _generateAnimatedTexts() {
     final name = _userName ?? 'bạn';
     List<String> messages = [
@@ -98,31 +106,59 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Constants.pureWhite,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: Container(
-            padding: ResponsiveHelper.getScreenPadding(context),
-            constraints: BoxConstraints(
-              maxWidth: ResponsiveHelper.getMaxWidth(context),
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black,
+                Colors.white,
+              ],
+              stops: [0.0, 0.5],
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 10),
-                  buildActionGrid(context),
-                  const SizedBox(height: 30),
-                  _buildAIStylishPrompt(),
-                  const SizedBox(height: 12),
-                  _buildSearchBox(),
-                  const SizedBox(height: 30),
-                  _buildRecentOutfitsTitle(),
-                  const SizedBox(height: 12),
-                  _buildRecentOutfits(),
-                  const SizedBox(height: 32),
-                  buildWeatherCard(),
-                ],
+          ),
+          child: Center(
+            child: Container(
+              padding: ResponsiveHelper.getScreenPadding(context),
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.getMaxWidth(context),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Banner
+                    Padding(
+                      padding: const EdgeInsets.only(top: 0, left: 2, right: 2, bottom: 6),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          'images/banner.png',
+                          fit: BoxFit.cover,
+                          width: double.maxFinite,
+                          height: 140,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    buildActionGrid(context),
+                    const SizedBox(height: 20),
+                    _buildAIStylishPrompt(),
+                    const SizedBox(height: 12),
+                    _buildSearchBox(),
+                    const SizedBox(height: 20),
+                    _buildRecentOutfitsTitle(),
+                    const SizedBox(height: 12),
+                    _buildRecentOutfits(),
+                    const SizedBox(height: 25),
+                    buildWeatherCard(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -164,8 +200,8 @@ class _HomePageState extends State<HomePage> {
         }
       },
       {
-        'icon': Icons.favorite_border,
-        'label': 'Yêu thích',
+        'icon': Icons.history,
+        'label': 'Lịch sử',
         'onTap': () {
           Navigator.push(
             context,
@@ -241,7 +277,7 @@ class _HomePageState extends State<HomePage> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: const Color(0xFFF5F5F5),
-                child: const Icon(Icons.smart_toy, color: Color(0xFF4285F4), size: 32),
+                child: const Icon(Icons.smart_toy, color: Constants.primaryBlue, size: 32),
               ),
               const SizedBox(width: 18),
               Expanded(
@@ -268,7 +304,7 @@ class _HomePageState extends State<HomePage> {
                         fontFamily: 'BeautiqueDisplay',
                         fontSize: 15,
                         fontStyle: FontStyle.italic,
-                        color: Color(0xFF4285F4),
+                        color: Color(0xFF2C3E50),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -337,76 +373,29 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecentOutfits() {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      return const Text('Vui lòng đăng nhập');
-    }
-
-    double height = ResponsiveHelper.isMobile(context) ? 70 : 100;
-    int imageCount = ResponsiveHelper.isMobile(context) ? 6 : 10;
-
+    double height = ResponsiveHelper.isMobile(context) ? 140 : 140;
+    double width = height * 0.7;
     return SizedBox(
       height: height,
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('clothing_items')
-            .where('uid', isEqualTo: uid)
-            .orderBy('uploaded_at', descending: true)
-            .limit(imageCount)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('Bạn chưa thêm món đồ nào'));
-          }
-
-          final items = snapshot.data!.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return data['base64Image'] ?? data['imageUrl'] ?? '';
-          }).where((url) => url.isNotEmpty).toList();
-
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              return _recentOutfitImg(items[index], height);
-            },
-          );
-        },
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: outfitImagePaths.map((url) => _recentOutfitImg(url, width, height)).toList(),
       ),
     );
   }
 
-  Widget _recentOutfitImg(String url, double size) {
+  Widget _recentOutfitImg(String url, double width, double height) {
     return Container(
-      margin: const EdgeInsets.only(right: 12),
-      width: size,
-      height: size,
+      margin: const EdgeInsets.only(right: 10),
+      width: width,
+      height: height,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Builder(
-          builder: (context) {
-            if (url.startsWith('data:image')) {
-              try {
-                final uriData = Uri.parse(url).data;
-                if (uriData == null) return const Icon(Icons.broken_image);
-                final bytes = uriData.contentAsBytes();
-                return Image.memory(bytes, fit: BoxFit.cover);
-              } catch (e) {
-                return const Icon(Icons.broken_image);
-              }
-            } else {
-              return CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                errorWidget: (context, url, error) => const Icon(Icons.broken_image),
-              );
-            }
-          },
+        borderRadius: BorderRadius.circular(28),
+        child: CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          errorWidget: (context, url, error) => const Icon(Icons.broken_image),
         ),
       ),
     );
@@ -417,7 +406,7 @@ class _HomePageState extends State<HomePage> {
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: const Color(0xFF0047AB),
+          color: Constants.primaryBlue,
           boxShadow: const [
             BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 3)),
           ],
@@ -446,7 +435,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        color: const Color(0xFF4285F4),
+        color: Constants.primaryBlue,
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(1, 2))],
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
