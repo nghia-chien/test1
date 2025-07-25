@@ -141,7 +141,8 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
         controller: controller,
         style: TextStyle(
           color: Constants.darkBlueGrey,
-          //fontFamily: 'BeautiqueDisplay',
+          fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w500
         ),
         decoration: InputDecoration(
           labelText: label,
@@ -151,19 +152,21 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Constants.secondaryGrey.withAlpha((255 * 0.3).round()),),
+            borderSide: BorderSide(color: secondaryGrey.withAlpha((255 * 0.3).round()),),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: primaryBlue, width: 2),
+            borderSide: BorderSide(color: black, width: 2),
           ),
           labelStyle: TextStyle(
             color: Constants.darkBlueGrey,
-            //fontFamily: 'BeautiqueDisplay',
+            fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w500
           ),
           hintStyle: TextStyle(
             color: Constants.secondaryGrey,
-            //fontFamily: 'BeautiqueDisplay',
+            fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w500
           ),
         ),
       ),
@@ -180,7 +183,7 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
         decoration: InputDecoration(
           labelText: label,
           filled: true,
-          fillColor: lightGray,
+          fillColor: const Color.fromARGB(255, 255, 255, 255),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -188,15 +191,16 @@ class _UploadClothingPageState extends State<UploadClothingPage> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: primaryBlue, width: 2),
+            borderSide: BorderSide(color: const Color.fromARGB(255, 0, 0, 0), width: 2),
           ),
           labelStyle: TextStyle(color: darkgrey),
         ),
-        icon: Icon(Icons.arrow_drop_down, color: primaryBlue),
+        icon: Icon(Icons.arrow_drop_down, color: const Color.fromARGB(255, 0, 0, 0)),
         dropdownColor: lightGray,
         style: TextStyle(
           color: darkgrey,
-          fontFamily: 'BeautiqueDisplay',
+          fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w500
         ),
       ),
     );

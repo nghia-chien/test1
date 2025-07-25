@@ -44,6 +44,7 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime? _selectedDay;
   bool _isMonthlyView = true;
   bool _isLoading = true;
+  String? weatherIconCode;
   Map<String, Map<String, dynamic>> _calendarData = {};
 
   @override
@@ -229,142 +230,153 @@ class _CalendarPageState extends State<CalendarPage> {
       },
     );
   }
+  // Thay thế _buildOutfitDisplay bằng hàm show dialog
+  void _showOutfitBottomSheet(BuildContext context) {
+    final DateTime selectedDay = _selectedDay ?? DateTime.now();
+    final dateKey = DateFormat('yyyy-MM-dd').format(selectedDay);
+    final calendarEntry = _calendarData[dateKey];
+    final outfitId = calendarEntry?['outfitId'];
 
-Widget _buildOutfitDisplay() {
-  final DateTime selectedDay = _selectedDay ?? DateTime.now();
-
-  final dateKey = DateFormat('yyyy-MM-dd').format(selectedDay);
-  final calendarEntry = _calendarData[dateKey];
-  final outfitId = calendarEntry?['outfitId'];
-
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 0),
-    child: Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.09), // Responsive padding
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color.fromARGB(255, 108, 160, 232),
-            const Color.fromARGB(255, 176, 236, 253),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha((0.15 * 255).round()),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          // Ngày tháng năm
-          Text(
-            'Ngày : ${DateFormat('dd/MM/yyyy').format(selectedDay)}',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-              fontSize: MediaQuery.of(context).size.width * 0.035,
-            ),
-            textAlign: TextAlign.start,
-          ),
-          const SizedBox(height: 20),
-          // Outfit images
-          SizedBox(
-            height: 70,
-            child: outfitId == null
-                ? Center(
-                    child: Text(
-                      'Chưa có trang phục cho ngày này',
-                      style: TextStyle(
-                        color: Colors.white.withAlpha((0.8 * 255).round()),
-                        fontSize: MediaQuery.of(context).size.width * 0.035,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : _buildOutfitImages(outfitId),
-          ),
-          const SizedBox(height: 22),
-          // Buttons
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _showSelectOutfitDialog(dateKey),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryBlue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          vertical: MediaQuery.of(context).size.height * 0.015,
-                        ),
-                        elevation: 0,
-                      ),
-                      child: FittedBox(
-                        child: Text(
-                          "Đổi đồ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: MediaQuery.of(context).size.width * 0.035,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final docRef = FirebaseFirestore.instance
-                            .collection('calendar_outfits')
-                            .doc(dateKey);
-                        await docRef.delete();
-                        await loadCalendarDataFromFirestore();
-                        setState(() {
-                          _selectedDay = null;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFFE74C3C),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          vertical: MediaQuery.of(context).size.height * 0.015,
-                        ),
-                        elevation: 0,
-                      ),
-                      child: FittedBox(
-                        child: Text(
-                          "Xóa",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: MediaQuery.of(context).size.width * 0.035,
-                          ),
-                        ),
-                      ),
-                    ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.5,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Container(
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.08),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.fromARGB(255, 108, 160, 232),
+                    Color.fromARGB(255, 176, 236, 253),
+                  ],
+                ),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha((0.15 * 255).round()),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
                   ),
                 ],
-              );
-            },
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Ngày tháng
+                    Text(
+                      'Ngày : ${DateFormat('dd/MM/yyyy').format(selectedDay)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontSize: MediaQuery.of(context).size.width * 0.04,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Hình ảnh trang phục
+                    SizedBox(
+                      height: 70,
+                      child: outfitId == null
+                          ? Center(
+                              child: Text(
+                                'Chưa có trang phục cho ngày này',
+                                style: TextStyle(
+                                  color: Colors.white.withAlpha((0.8 * 255).round()),
+                                  fontSize: MediaQuery.of(context).size.width * 0.035,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          : _buildOutfitImages(outfitId),
+                    ),
+                    const SizedBox(height: 22),
+                    // Các nút
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _showSelectOutfitDialog(dateKey);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kPrimaryBlue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                vertical: MediaQuery.of(context).size.height * 0.015,
+                              ),
+                              elevation: 0,
+                            ),
+                            child: FittedBox(
+                              child: Text(
+                                outfitId == null ? "Thêm đồ" : "Đổi đồ",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: MediaQuery.of(context).size.width * 0.035,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (outfitId != null) ...[
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                final docRef = FirebaseFirestore.instance
+                                    .collection('calendar_outfits')
+                                    .doc(dateKey);
+                                await docRef.delete();
+                                await loadCalendarDataFromFirestore();
+                                setState(() => _selectedDay = null);
+                                Navigator.pop(context);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFFE74C3C),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: MediaQuery.of(context).size.height * 0.015,
+                                ),
+                                elevation: 0,
+                              ),
+                              child: FittedBox(
+                                child: Text(
+                                  "Xóa",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildOutfitCard(Map<String, dynamic> outfit, int index) {
     return FutureBuilder<QuerySnapshot>(
@@ -498,7 +510,8 @@ Widget _buildOutfitDisplay() {
 
       cells.add(
         GestureDetector(
-          onTap: () => setState(() => _selectedDay = date),
+          onTap: () { setState(() => _selectedDay = date);
+                      _showOutfitBottomSheet(context);},
           child: Container(
             margin: const EdgeInsets.all(2),
             decoration: BoxDecoration(
@@ -601,7 +614,8 @@ Widget _buildHorizontalWeekView() {
                   onPressed: () => setState(() {
                     _isMonthlyView = !_isMonthlyView;
                     _selectedDay = null;
-                  }),
+                  }
+                  ),
                 ),
               ],
             ),
@@ -670,10 +684,9 @@ Widget _buildHorizontalWeekView() {
                       final dayName = weekdays[date.weekday - 1];
 
                       return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedDay = date;
-                          });
+                        onTap: () { 
+                          setState(() => _selectedDay = date);
+                          _showOutfitBottomSheet(context);
                         },
                         child: Container(
                           width: 70,
@@ -903,7 +916,7 @@ Widget _buildHorizontalWeekView() {
                   ),
                 ),
                 // Đặt _buildOutfitDisplay bên ngoài Expanded và SingleChildScrollView
-                _buildOutfitDisplay(),
+                //_buildOutfitDisplay(),
               ],
             ),
     );
@@ -964,45 +977,49 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
     return buildWeeklyWeatherCard(forecast!);
   }
 Widget buildWeeklyWeatherCard(List<Map<String, dynamic>> dailyForecasts) {
-  final days = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
+  final today = DateTime.now();
+  // Map weekday sang tên thứ tiếng Việt, bắt đầu từ CN
+  final weekdayNames = ['CN', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7'];
 
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: List.generate(7, (index) {
-      // Nếu index vượt quá độ dài danh sách → bỏ qua
-      if (index >= dailyForecasts.length) {
-        return const SizedBox(width: 40); // placeholder rỗng
-      }
+      final date = today.add(Duration(days: index));
+      final dayName = weekdayNames[date.weekday % 7];
 
-      final forecast = dailyForecasts[index];
+      // Tìm forecast đúng ngày
+      final forecast = dailyForecasts.firstWhere(
+        (f) {
+          DateTime? dt;
+          if (f.containsKey('dt_txt')) {
+            dt = DateTime.tryParse(f['dt_txt']);
+          } else if (f.containsKey('date')) {
+            dt = DateTime.tryParse(f['date']);
+          }
+          return dt != null && dt.year == date.year && dt.month == date.month && dt.day == date.day;
+        },
+        orElse: () => {},
+      );
 
-      // Kiểm tra dữ liệu hợp lệ
-      if (forecast['main'] == null ||
-          forecast['main']['temp'] == null ||
-          forecast['weather'] == null ||
-          forecast['weather'].isEmpty ||
-          forecast['weather'][0]['icon'] == null) {
-        return const SizedBox(width: 40); // placeholder rỗng
+      if (forecast.isEmpty || forecast['main'] == null || forecast['weather'] == null) {
+        return const SizedBox(width: 40);
       }
 
       final temp = (forecast['main']['temp'] as num).round();
-      final weatherIcon = forecast['weather'][0]['icon'];
-
+      final weatherIconCode = forecast['weather'][0]['icon'];
+      final iconUrl = 'https://openweathermap.org/img/wn/$weatherIconCode@4x.png';
       return SizedBox(
         width: 40,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              days[index],
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.white,
-              ),
+              dayName,
+              style: const TextStyle(fontSize: 12, color: Colors.white),
             ),
             const SizedBox(height: 8),
             Image.network(
-              'https://openweathermap.org/img/wn/$weatherIcon.png',
+              iconUrl,
               width: 32,
               height: 32,
               errorBuilder: (_, __, ___) => const Icon(

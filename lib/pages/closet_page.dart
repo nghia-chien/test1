@@ -94,68 +94,40 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
   }
 
   Widget _buildTabBar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      height: 42, // Giảm chiều cao để phù hợp với điện thoại
-      decoration: BoxDecoration(
-        color: white,
-        borderRadius: BorderRadius.circular(21), // Bo tròn bằng nửa chiều cao
-        border: Border.all(color: secondaryGrey.withAlpha((255 * 0.2).round()), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: darkgrey.withAlpha((255 * 0.08).round()),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: List.generate(tabs.length, (index) {
-          final isSelected = _selectedTabIndex == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedTabIndex = index),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                margin: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  gradient: isSelected 
-                    ? LinearGradient(
-                        colors: [primaryBlue, darkBlue],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                  color: isSelected ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(19),
-                  boxShadow: isSelected ? [
-                    BoxShadow(
-                      color: primaryBlue.withOpacity(0.25),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    )
-                  ] : null,
-                ),
-                child: Center(
-                  child: Text(
-                    tabs[index],
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      fontSize: 13, // Giảm size font để gọn gàng hơn
-                      color: isSelected ? white : secondaryGrey,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(tabs.length, (index) {
+        final label = tabs[index];
+        final isActive = _selectedTabIndex == index;
+        return GestureDetector(
+          
+          onTap: () => setState(() => _selectedTabIndex = index),
+          
+          child: Column(
+            
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: isActive ? Color(0xFF209CFF) : Colors.black54,
                 ),
               ),
-            ),
-          );
-        }),
-      ),
+              if (isActive)
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  height: 2,
+                  width: 24,
+                  color: Color(0xFF209CFF),
+                )
+            ],
+          ),
+        );
+      }),
     );
   }
-  
+
   Widget _buildCategoryFilter() {
       return SizedBox(
         height: 50,
@@ -168,12 +140,12 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
             final category = _categories[index];
             final isSelected = _selectedCategory == category;
             return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 0),
               child: FilterChip(
                 label: Text(
                   category,
                   style: TextStyle(
-                    color: isSelected ? pearl : darkBlue,
+                    color: isSelected ? pearl : primaryBlue,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -184,7 +156,7 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
                 selectedColor: primaryBlue,
                 checkmarkColor: pearl,
                 side: BorderSide(
-                  color: isSelected ? primaryBlue : darkBlue.withOpacity(0.5),
+                  color: isSelected ? primaryBlue : const Color.fromARGB(255, 209, 209, 209).withOpacity(0.5),
                   width: 2,
                 ),
                 shape: RoundedRectangleBorder(
@@ -204,6 +176,7 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
     if (uid == null) {
       return Center(
         child: Container(
+          margin:EdgeInsets.all(12),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             gradient: RadialGradient(
@@ -227,7 +200,9 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
     }
 
     return Column(
+      
       children: [
+        const SizedBox(height: 16),
         _buildCategoryFilter(),
         const SizedBox(height: 16),
         Expanded(
@@ -238,6 +213,7 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
                 .orderBy('uploaded_at', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
+//hiệu ứng đang đợiđợi
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(
                   child: Column(
@@ -263,7 +239,7 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
                   ),
                 );
               }
-
+//dữ liệu trốngtrống
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return Center(
                   child: Column(
@@ -302,7 +278,7 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
                   ),
                 );
               }
-
+//truy cập dữ liệu
               final clothingItems = snapshot.data!.docs.map((doc) {
                 final data = doc.data() as Map<String, dynamic>;
                 return ClothingItem(
@@ -354,9 +330,11 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
         child: SlideTransition(
           position: _slideAnimation,
           child: Column(
-            children: [
-              _buildTabBar(),
+            children: [Container(height: 40,color: white,child:  _buildTabBar(),),
+              
+              
               Expanded(
+                
                 child: _selectedTabIndex == 0
                     ? _buildClothingGrid()
                     : _buildPostGrid('saved_outfits'),
@@ -594,7 +572,7 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
+                        icon: const Icon(Icons.clear, color: Color.fromARGB(255, 0, 0, 0)),
                         tooltip: "Xóa outfit này",
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
@@ -789,10 +767,11 @@ class _ClothingItemCardState extends State<_ClothingItemCard> with SingleTickerP
                         
                       ),
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(24),
-                          topRight: Radius.circular(24),
-                        ),//ảnh
+                        // borderRadius: const BorderRadius.only(
+                        //   topLeft: Radius.circular(24),
+                        //   topRight: Radius.circular(24),
+                        // ),//ảnh
+                        borderRadius: BorderRadius.circular(20),
                         child: widget.item.imageUrl.isNotEmpty
                             ? Image.memory(
                                 Uri.parse(widget.item.imageUrl).data!.contentAsBytes(),
@@ -821,30 +800,30 @@ class _ClothingItemCardState extends State<_ClothingItemCard> with SingleTickerP
                       ),
                     ),
                   ),
-                  Expanded(
-                    flex: 2,
-                    child: Center(
-                      //padding: const EdgeInsets.all(16),
-                      child: Column( //tên item
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            widget.item.name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: const Color.fromARGB(255, 70, 70, 70),
-                              //height: 1.2,
-                            ),
-                            //maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                  // Expanded(
+                  //   flex: 2,
+                  //   child: Center(
+                  //     //padding: const EdgeInsets.all(16),
+                  //     child: Column( //tên item
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Text(
+                  //           widget.item.name,
+                  //           style: TextStyle(
+                  //             fontWeight: FontWeight.bold,
+                  //             fontSize: 14,
+                  //             color: const Color.fromARGB(255, 70, 70, 70),
+                  //             //height: 1.2,
+                  //           ),
+                  //           //maxLines: 2,
+                  //           overflow: TextOverflow.ellipsis,
+                  //         ),
                           
-                        ],
-                      ),
-                    ),
-                  ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),

@@ -26,6 +26,8 @@ class _AiMixPageState extends State<AiMixPage> {
   String? _occasionFilter;
   Set<String> _savedOutfitHashes = {};
   String _outfitHash(List<ClothingItem> items) => items.map((i) => i.id).toSet().join(',');
+  bool _showFilters = false;
+
 
   final Color primaryBlue = Color(0xFF209CFF);
   final Color lightGrey = Constants.secondaryGrey.withValues(alpha: 0.2);
@@ -102,7 +104,10 @@ class _AiMixPageState extends State<AiMixPage> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _suggestedOutfits.clear(); // 👈 XÓA dữ liệu cũ trước khi tạo outfit mới
+    });
     
     try {
       final prompt = _promptController.text.toLowerCase();
@@ -145,7 +150,10 @@ class _AiMixPageState extends State<AiMixPage> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _suggestedOutfits.clear(); // 👈 XÓA dữ liệu cũ trước khi random
+    });
     
     try {
       // Filter items based on season and occasion if selected
@@ -396,187 +404,179 @@ class _AiMixPageState extends State<AiMixPage> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    //final isWide = ResponsiveHelper.isTablet(context) || ResponsiveHelper.isDesktop(context);
-    final crossAxisCount = ResponsiveHelper.getCrossAxisCount(context);
+@override
+Widget build(BuildContext context) {
+  final crossAxisCount = ResponsiveHelper.getCrossAxisCount(context);
 
-    return Scaffold(
-      backgroundColor: Constants.pureWhite,
-      body: Column(
-        children: [
-          // Search and Filter Section - Cho phép cuộn
-          Flexible(
-            flex: 0,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
+  return Scaffold(
+    backgroundColor: Constants.pureWhite,
+    body: Column(
+      children: [
+        // Header section
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  // Search Input
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-                    child: TextField(
-                      controller: _promptController,
-                      decoration: const InputDecoration(
-                        hintText: 'Mô tả outfit bạn muốn...',
-                        hintStyle: TextStyle(color: Colors.grey),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      onSubmitted: (_) => _generateOutfits(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TextField(
+                        controller: _promptController,
+                        decoration: const InputDecoration(
+                          hintText: 'Mặc gì hôm nay',
+                          border: InputBorder.none,
+                        ),
+                        onSubmitted: (_) => _generateOutfits(),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Filters Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: DropdownButton<String>(
-                            hint: const Text('Mùa', style: TextStyle(color: Colors.grey)),
-                            value: _seasonFilter,
-                            isExpanded: true,
-                            underline: Container(),
-                            items: ['Tất Cả', 'Xuân', 'Hè', 'Thu', 'Đông']
-                                .map((s) => DropdownMenuItem(
-                                      value: s,
-                                      child: Text(s, style: const TextStyle(color: Colors.black)),
-                                    ))
-                                .toList(),
-                            onChanged: (v) => setState(() => _seasonFilter = v),
-                          ),
-                        ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => setState(() => _showFilters = !_showFilters),
+                    icon: const Icon(Icons.tune),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade300),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: DropdownButton<String>(
-                            hint: const Text('Dịp', style: TextStyle(color: Colors.grey)),
-                            value: _occasionFilter,
-                            isExpanded: true,
-                            underline: Container(),
-                            items: ['', 'Đi làm', 'Tiệc', 'Du lịch', 'Hẹn hò']
-                                .map((s) => DropdownMenuItem(
-                                      value: s,
-                                      child: Text(s.isEmpty ? 'Tất cả' : s, style: const TextStyle(color: Colors.black)),
-                                    ))
-                                .toList(),
-                            onChanged: (v) => setState(() => _occasionFilter = v),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _generateOutfits,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryBlue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Tìm Kiếm',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _generateRandomOutfits,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: lightGrey),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Random',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ),
-
-          // Results Section
-          Expanded(
-            child: Container(
-              color: Colors.grey[50],
-              child: _isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(primaryBlue),
+              const SizedBox(height: 12),
+              if (_showFilters)
+                Row(
+                  children: [
+                    _buildDropdown(
+                      label: 'Mùa',
+                      value: _seasonFilter,
+                      items: ['Tất Cả', 'Xuân', 'Hè', 'Thu', 'Đông'],
+                      onChanged: (v) => setState(() => _seasonFilter = v),
+                    ),
+                    const SizedBox(width: 12),
+                    _buildDropdown(
+                      label: 'Dịp',
+                      value: _occasionFilter,
+                      items: ['', 'Đi làm', 'Tiệc', 'Du lịch', 'Hẹn hò'],
+                      labelBuilder: (s) => s.isEmpty ? 'Tất cả' : s,
+                      onChanged: (v) => setState(() => _occasionFilter = v),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      
+                      onPressed: _isLoading ? null : _generateRandomOutfits,
+                      icon: const Icon(Icons.shuffle),
+                      label: const Text('Random'),
+                      
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side: BorderSide(color: Colors.grey.shade300),
                       ),
-                    )
-                  : _suggestedOutfits.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'Chưa có outfit nào\nHãy thử tìm kiếm hoặc tạo ngẫu nhiên',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                              height: 1.5,
-                            ),
-                          ),
-                        )
-                      : GridView.builder(
-                          padding: const EdgeInsets.all(20),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            childAspectRatio: 0.8,
-                            mainAxisSpacing: 20,
-                            crossAxisSpacing: 20,
-                          ),
-                          itemCount: _suggestedOutfits.length,
-                          itemBuilder: (context, index) {
-                            final outfit = _suggestedOutfits[index];
-                            return _buildOutfitCard(outfit, index);
-                          },
-                        ),
-            ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _isLoading ? null : _generateOutfits,
+                      icon: const Icon(Icons.search),
+                      label: const Text('Tìm kiếm'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: primaryBlue,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator(color: primaryBlue))
+                : _suggestedOutfits.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Chưa có outfit nào\nHãy thử tìm kiếm hoặc tạo ngẫu nhiên',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.all(20),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          childAspectRatio: 0.75,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                        itemCount: _suggestedOutfits.length,
+                        itemBuilder: (_, i) => _buildOutfitCard(_suggestedOutfits[i], i),
+                      ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildDropdown({
+  required String label,
+  required String? value,
+  required List<String> items,
+  required void Function(String?) onChanged,
+  String Function(String)? labelBuilder,
+}) {
+  return Expanded(
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
       ),
-   );
-  }
-  
+      child: DropdownButton<String>(
+        isExpanded: true,
+        underline: Container(),
+        value: value,
+        hint: Text(label, style: const TextStyle(color: Colors.grey)),
+        items: items.map((s) {
+          return DropdownMenuItem<String>(
+            value: s,
+            child: Text(
+              labelBuilder != null ? labelBuilder(s) : s,
+              style: const TextStyle(color: Colors.black),
+            ),
+          );
+        }).toList(),
+        onChanged: onChanged,
+      ),
+    ),
+  );
+}
+ 
   Widget _buildOutfitCard(List<ClothingItem> outfit, int index) {
     final isSaved = _savedOutfitHashes.contains(_outfitHash(outfit));
 
@@ -621,8 +621,11 @@ class _AiMixPageState extends State<AiMixPage> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.bookmark_border, size: 20),
-                    color: midGrey,
+                    icon: Icon(
+                      isSaved ? Icons.save_alt_outlined : Icons.save_alt_outlined,
+                      color: isSaved ? primaryBlue : midGrey,
+                      size: 22,
+                    ),
                     onPressed: () => _saveOutfit(outfit),
                   ),
                 ],

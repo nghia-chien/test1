@@ -201,7 +201,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.chat_bubble_outline),
-                      onPressed: () => _showCommentsDialog(doc),
+                      onPressed: () => _showCommentsDialog(
+                        doc,
+                        FirebaseAuth.instance.currentUser,
+                        doc.data().toString().contains('username') ? doc['username'] : null,
+                        doc.data().toString().contains('userImage') ? doc['userImage'] : null,
+                      ),
                     ),
                     StreamBuilder<QuerySnapshot>(
                       stream: doc.reference.collection('comments').snapshots(),
@@ -211,11 +216,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.bookmark_border),
-                      onPressed: () {},
-                    ),
-                    // Nút xóa chỉ cho chủ bài đăng
                     if (user != null && data['uid'] == user!.uid)
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
@@ -267,16 +267,204 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _showCommentsDialog(DocumentSnapshot doc) {
+  void _showCommentsDialog(
+    DocumentSnapshot postDoc,
+    User? user,
+    String? username,
+    String? imageUrl,
+  ) {
+    final commentController = TextEditingController();
+    final commentRef = postDoc.reference.collection('comments');
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Comments'),
-        content: Text('Comments dialog implementation'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Close')),
-        ],
-      ),
+      builder: (context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            width: double.infinity,
+            height: 500,
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                // Tiêu đề
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'Bình luận',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+
+                // Danh sách bình luận
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: commentRef.orderBy('createdAt', descending: true).snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final comments = snapshot.data!.docs;
+
+                      if (comments.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Column(
+                            children: [
+                              Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text('Chưa có bình luận nào', style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: comments.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, i) => _buildCommentItem(comments[i]),
+                      );
+                    },
+                  ),
+                ),
+
+                // Thanh nhập bình luận
+                if (user != null)
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        // Avatar người dùng
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.blue[100],
+                          backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+                          child: imageUrl == null
+                              ? Text(
+                                  (username ?? 'U')[0].toUpperCase(),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+
+                        // TextField nhập bình luận
+                        Expanded(
+                          child: TextField(
+                            controller: commentController,
+                            decoration: InputDecoration(
+                              hintText: 'Thêm bình luận...',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            onSubmitted: (_) =>
+                                _submitComment(commentController, postDoc, user, username),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Nút gửi
+                        Container(
+                          decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                          child: IconButton(
+                            icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                            onPressed: () =>
+                                _submitComment(commentController, postDoc, user, username),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+  Future<void> _submitComment(
+    TextEditingController controller,
+    DocumentSnapshot postDoc,
+    User user,
+    String? username,
+  ) async {
+    final content = controller.text.trim();
+    if (content.isEmpty) return;
+
+    await postDoc.reference.collection('comments').add({
+      'content': content,
+      'userId': user.uid,
+      'name': username ?? 'Người dùng',
+      'createdAt': Timestamp.now(),
+    });
+
+    controller.clear();
+  }
+  String _formatTime(DateTime time) {
+    final now = DateTime.now();
+    final diff = now.difference(time);
+    
+    if (diff.inMinutes < 1) return 'vừa xong';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}p';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    if (diff.inDays < 7) return '${diff.inDays}d';
+    return '${time.day}/${time.month}/${time.year}';
+  }
+  Widget _buildCommentItem(DocumentSnapshot comment) {
+    final commentUsername = (comment['name'] ?? comment['username'] ?? 'User').toString();
+    final commentContent = comment['content'] ?? '';
+    final commentCreatedAt = (comment['createdAt'] as Timestamp?)?.toDate();
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 16,
+          backgroundColor: Colors.blue[100],
+          child: Text(
+            commentUsername[0].toUpperCase(),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blue[800]),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(commentUsername, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    if (commentCreatedAt != null) ...[
+                      const SizedBox(width: 8),
+                      Text(_formatTime(commentCreatedAt), style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(commentContent, style: const TextStyle(fontSize: 13, height: 1.4)),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -304,8 +492,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Color(0xFFD4A373),
-                            Color(0xFFfEFAE0),
+                            Color(0xFF209CFF),
+                            Color.fromARGB(255, 93, 180, 220),
                             Color(0xFFCCD5AE),
                           ],
                         ),
@@ -459,7 +647,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-
+// thanh baif vieets / trang phucj
   Widget _buildTabBar() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -475,7 +663,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: isActive ? Color(0xFF5B67CA) : Colors.black54,
+                  color: isActive ? Color(0xFF209CFF) : Colors.black54,
                 ),
               ),
               if (isActive)
@@ -483,7 +671,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   margin: const EdgeInsets.only(top: 4),
                   height: 2,
                   width: 24,
-                  color: Color(0xFF5B67CA),
+                  color: Color(0xFF209CFF),
                 )
             ],
           ),
@@ -556,11 +744,14 @@ Widget _buildSavedOutfitCard(DocumentSnapshot doc) {
           }
         },
         child: Card(
+          color: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 2,
           child: Padding(
             padding: const EdgeInsets.all(12),
+            
             child: Column(
+              
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Tiêu đề + nút xóa
@@ -572,7 +763,7 @@ Widget _buildSavedOutfitCard(DocumentSnapshot doc) {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: const Icon(Icons.clear, color: Color.fromARGB(255, 0, 0, 0)),
                       tooltip: "Xóa outfit này",
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
@@ -800,31 +991,42 @@ class _SettingsSheet extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onSave;
 
-  const _SettingsSheet({required this.isEditing, required this.onEdit, required this.onSave});
+  const _SettingsSheet({
+    required this.isEditing,
+    required this.onEdit,
+    required this.onSave,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      color: Colors.white, // Nền trắng
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _settingTile(Icons.edit, isEditing ? "Save Changes" : "Edit Profile", () {
-            Navigator.pop(context);
-            isEditing ? onSave() : onEdit();
-          }),
-          _settingTile(Icons.logout, "Logout", () async {
-            Navigator.pop(context); // đóng popup
+          _settingTile(
+            Icons.edit,
+            isEditing ? "Save Changes" : "Edit Profile",
+            () {
+              Navigator.pop(context);
+              isEditing ? onSave() : onEdit();
+            },
+          ),
+          _settingTile(
+            Icons.logout,
+            "Log out",
+            () async {
+              Navigator.pop(context); // đóng popup
 
-            await FirebaseAuth.instance.signOut();
+              await FirebaseAuth.instance.signOut();
 
-            // Xoá navigation stack và quay về LoginPage (ví dụ)
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const LoginPage()), // thay bằng trang đăng nhập của bạn
-              (Route<dynamic> route) => false,
-            );
-          }),
-
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+                (Route<dynamic> route) => false,
+              );
+            },
+          ),
         ],
       ),
     );

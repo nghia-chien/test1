@@ -62,7 +62,7 @@ class ActivityHistory {
   IconData get actionIcon {
     switch (action) {
       case 'upload':
-        return Icons.upload_file;
+        return Icons.post_add;
       case 'delete':
         return Icons.delete;
       case 'like':
@@ -72,9 +72,9 @@ class ActivityHistory {
       case 'share':
         return Icons.share;
       case 'chat':
-        return Icons.chat;
+        return Icons.wechat;
       case 'calendar':
-        return Icons.calendar_today;
+        return Icons.calendar_month;
       case 'profile':
         return Icons.person;
       default:

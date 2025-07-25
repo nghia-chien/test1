@@ -1,134 +1,145 @@
+import 'package:cursor/main.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/location_service.dart';
-import '../services/weather_service.dart';
-import 'chat_screen.dart';
-import 'notification.dart';
-import 'uploadimage_page.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'calendar_page.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
-import '../utils/responsive_helper.dart';
 import '../constants/constants.dart';
-import 'history_page.dart';
-import 'CreateOutfitPage.dart';
-import 'dart:typed_data';
-import 'profile_page2.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/weather_service.dart';
+import 'dart:convert';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
+// Updated color scheme
+class AppColors {
+  static const Color lightGray = Color(0xFFF5F5F5);
+  static const Color primaryBlue = Color(0xFF209CFF);
+  static const Color secondaryGrey = Color(0xFF7D7F85);
+  static const Color darkgrey = Color(0xFF231f20);
+  static const Color errorRed = Color(0xFFD32F2F);
+  static const Color darkBlue = Color(0xFF006cff);
+  static const Color black =Color(0xFF000000);
 }
 
-class _HomePageState extends State<HomePage> {
-  String? weatherDescription;
-  double? temperature;
-  String? weatherIconCode;
-  String? cityName;
-  String? countryCode;
-  String? _userName;
-  final TextEditingController _searchController = TextEditingController();
+class ClothingItem {
+  final String id;
+  final String name;
+  final String imageUrl;
+  final String category;
+  
+  ClothingItem({
+    required this.id,
+    required this.name,
+    required this.imageUrl,
+    required this.category,
+  });
+}
 
-  // Recent Outfits demo images (bạn có thể thay bằng ảnh thật hoặc link mạng)
-  final List<String> outfitImagePaths = [
-    'images/logo.png',
-    'images/logo_dt.png',
-    'images/banner.png',
-    // Thêm các ảnh khác nếu có
-  ];
+class CalendarPage extends StatefulWidget {
+  const CalendarPage({super.key});
 
-  List<AnimatedText> _generateAnimatedTexts() {
-    final name = _userName ?? 'bạn';
-    List<String> messages = [
-      'Chào bạn quay trở lại, $name ',
-      'Bạn muốn tư vấn điều gì?',
-      'Hãy nhập điều bạn muốn!',
-    ];
-    if (weatherDescription != null && temperature != null) {
-      if (temperature! >= 28) {
-        messages.insert(1, 'Hôm nay trời nóng, bạn có muốn mặc bộ đồ mát mẻ?');
-      } else if (temperature! <= 20) {
-        messages.insert(1, 'Có vẻ trời đang lạnh, bạn có muốn chọn bộ đồ ấm áp?');
-      }
-    }
-    return messages
-        .map((msg) => TypewriterAnimatedText(msg, speed: const Duration(milliseconds: 60)))
-        .toList();
-  }
+  @override
+  State<CalendarPage> createState() => _CalendarPageState();
+}
+
+class _CalendarPageState extends State<CalendarPage> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  bool _isMonthlyView = true;
+  bool _isLoading = true;
+  Map<String, Map<String, dynamic>> _calendarData = {};
+  bool _showAddOutfitSection = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserName();
-    fetchWeatherData();
+    loadCalendarDataFromFirestore();
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  Future<void> loadCalendarDataFromFirestore() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final snapshot = await FirebaseFirestore.instance
+        .collection('calendar_outfits')
+        .where('uid', isEqualTo: uid)
+        .get();
 
-  Future<void> _loadUserName() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      setState(() {
-        _userName = doc.data()?['name'] ?? 'Guest';
-      });
-    } else {
-      setState(() {
-        _userName = 'Guest';
-      });
+    final Map<String, Map<String, dynamic>> data = {};
+    for (final doc in snapshot.docs) {
+      final calendar = doc.data();
+      final dateKey = calendar['date'];
+      data[dateKey] = calendar;
     }
+
+    setState(() {
+      _calendarData = data;
+      _isLoading = false;
+    });
   }
 
-  Future<void> fetchWeatherData() async {
-    try {
-      final position = await LocationService.getCurrentPosition();
-      if (position != null) {
-        final weather = await WeatherService.fetchWeather(position.latitude, position.longitude);
-        setState(() {
-          weatherDescription = weather['weather'][0]['description'];
-          temperature = weather['main']['temp'];
-          weatherIconCode = weather['weather'][0]['icon'];
-          cityName = weather['name'];
-          countryCode = weather['sys']?['country'];
-        });
-      }
-    } catch (e) {
-      debugPrint('Lỗi lấy thời tiết: $e');
-    }
-  }
+  Future<void> _showSelectOutfitDialog(String dateKey) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final snapshot = await FirebaseFirestore.instance
+        .collection('saved_outfits')
+        .where('uid', isEqualTo: uid)
+        .get();
 
-void _showNotifications() {
-    showGeneralDialog(
+    showDialog(
+      
       context: context,
-      barrierDismissible: true,
-      barrierLabel: "Notifications",
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const SizedBox.shrink(); // Nội dung thực sự nằm trong transitionBuilder
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curvedValue = Curves.easeInOut.transform(animation.value);
-        return Transform.translate(
-          offset: Offset(0, -300 + (300 * curvedValue)), // Trượt từ trên xuống
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Material(
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(24),
-              ),
-              color: Colors.white,
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: 400, // Tùy chỉnh chiều cao panel
-                child: const NotificationPanel(),
-              ),
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            // Sử dụng MediaQuery để đảm bảo dialog không vượt quá màn hình
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: const Text(
+                        "Select Outfit",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.black),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: snapshot.docs.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No outfits saved yet',
+                            style: TextStyle(color: AppColors.darkgrey),
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: snapshot.docs.length,
+                          itemBuilder: (context, index) {
+                            final outfit = snapshot.docs[index].data();
+                            outfit['id'] = snapshot.docs[index].id;
+                            return _buildOutfitCard(outfit, index);
+                          },
+                        ),
+                ),
+              ],
             ),
           ),
         );
@@ -136,453 +147,987 @@ void _showNotifications() {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildOutfitImages(String outfitId) {
+    return FutureBuilder<DocumentSnapshot>(
+      future:
+          FirebaseFirestore.instance.collection('saved_outfits').doc(outfitId).get(),
+      builder: (context, outfitSnapshot) {
+        if (outfitSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+              child: CircularProgressIndicator(color: Colors.white));
+        }
+        if (!outfitSnapshot.hasData || outfitSnapshot.data?.data() == null) {
+          return const Center(
+              child:
+                  Text("Outfit not found", style: TextStyle(color: Colors.white)));
+        }
 
-    final isWideScreen = ResponsiveHelper.isDesktop(context) || ResponsiveHelper.isTablet(context);
-        return Scaffold(
-        appBar: isWideScreen
-        ? null
-        :  AppBar(
-            backgroundColor: Colors.black,
-            elevation: 0,
-            automaticallyImplyLeading: false,
-            toolbarHeight: 80,
-            titleSpacing: 8, // Đổi số này để chỉnh khoảng cách lề trái
-            title: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Image.asset(
-                        'images/logo.png',
-                        width: 120,
-                        height: 60,
-                        fit: BoxFit.contain,
-                      ),
+        final outfitData = outfitSnapshot.data!.data() as Map<String, dynamic>;
+        final itemIds = List<String>.from(outfitData['itemIds'] ?? []);
+
+        if (itemIds.isEmpty) {
+          return const Center(
+              child: Text("Outfit has no items",
+                  style: TextStyle(color: Colors.white)));
+        }
+
+        return FutureBuilder<QuerySnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('clothing_items')
+              .where(FieldPath.documentId, whereIn: itemIds)
+              .get(),
+          builder: (context, itemsSnapshot) {
+            if (itemsSnapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox();
+            }
+            if (!itemsSnapshot.hasData) {
+              return const Center(
+                  child: Text("Could not load items",
+                      style: TextStyle(color: Colors.white)));
+            }
+
+            final clothingItems = itemsSnapshot.data!.docs;
+            if (clothingItems.isEmpty) {
+              return const Center(
+                  child: Text("No items found for this outfit.",
+                      style: TextStyle(color: Colors.white)));
+            }
+
+            return SizedBox(
+              height: 60, // Giảm chiều cao để tránh overflow
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: clothingItems.length,
+                itemBuilder: (context, index) {
+                  final item = clothingItems[index].data() as Map<String, dynamic>;
+                  final base64 = item['base64Image'] ?? '';
+                  return Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    width: 50, // Giảm kích thước
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.lightGray,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12.0, top: 0), // chỉnh lề trái dòng slogan
-                      child: const Text(
-                        "With Honor. be You",
-                        style: TextStyle(
-                          fontSize: 11, // chỉnh font size nhỏ
-                          color: Colors.white,
-                          fontFamily: 'BeautiqueDisplay',
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: base64.isNotEmpty && base64.startsWith('data:image')
+                          ? Image.memory(
+                              base64Decode(base64.split(',').last),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.error, size: 20),
+                            )
+                          : const Icon(Icons.image_not_supported,
+                              color: AppColors.darkgrey, size: 20),
                     ),
-                  ],
-                ),
-                const Spacer(),
-                Padding(
-                  padding: EdgeInsets.only(top: 12.0), // Đưa icon xuống dưới
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-                        onPressed: _showNotifications,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.account_circle_outlined, color: Colors.white, size: 28),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ProfilePage(key: PageStorageKey('profile')),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-      backgroundColor: Colors.white,
-      body: SafeArea(
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+// Thay thế _buildOutfitDisplay bằng hàm show dialog
+void _showOutfitDisplayDialog(BuildContext context) {
+  final DateTime selectedDay = _selectedDay ?? DateTime.now();
+  final dateKey = DateFormat('yyyy-MM-dd').format(selectedDay);
+  final calendarEntry = _calendarData[dateKey];
+  final outfitId = calendarEntry?['outfitId'];
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
         child: Container(
           width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.09),
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black,
-                Colors.white,
+                const Color.fromARGB(255, 108, 160, 232),
+                const Color.fromARGB(255, 176, 236, 253),
               ],
-              stops: [0.0, 0.5],
             ),
-          ),
-          child: Center(
-            child: Container(
-              padding: ResponsiveHelper.getScreenPadding(context),
-              constraints: BoxConstraints(
-                maxWidth: ResponsiveHelper.getMaxWidth(context),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha((0.15 * 255).round()),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Banner
-                    Padding(
-                      padding: const EdgeInsets.only(top: 0, left: 2, right: 2, bottom: 6),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(
-                          'images/banner.png',
-                          fit: BoxFit.cover,
-                          width: double.maxFinite,
-                          height: 140,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    buildActionGrid(context),
-                    const SizedBox(height: 20),
-                    _buildAIStylishPrompt(),
-                    const SizedBox(height: 12),
-                    _buildSearchBox(),
-                    const SizedBox(height: 20),
-                    _buildRecentOutfitsTitle(),
-                    const SizedBox(height: 12),
-                    _buildRecentOutfits(),
-                    const SizedBox(height: 25),
-                    buildWeatherCard(),
-                  ],
-                ),
-              ),
-            ),
+            ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget buildActionGrid(BuildContext context) {
-    final actions = [
-      {
-        'icon': Icons.upload_file,
-        'label': 'Thêm đồ',
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const UploadClothingPage()),
-          );
-        }
-      },
-      {
-        'icon': Icons.style_outlined, 
-        'label': 'Tạo outfit', 
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const EditOutfitPage()),
-          );
-      }
-      },
-      {
-        'icon': Icons.calendar_today,
-        'label': 'Kế hoạch',
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CalendarPage()),
-          );
-        }
-      },
-      {
-        'icon': Icons.history,
-        'label': 'Lịch sử',
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const HistoryPage()),
-          );
-        }
-      },
-    ];
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: actions.map((item) {
-        return Expanded(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(50),
-            onTap: item['onTap'] as VoidCallback,
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: Constants.pureWhite,
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Constants.darkBlueGrey.withAlpha((255 * 0.1).round()), blurRadius: 4)],
-                  ),
-                  child: Icon(
-                    item['icon'] as IconData,
-                    size: 26,
-                    color: Constants.primaryBlue,
+                // Tiêu đề ngày + nút thêm đồ
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Ngày :  ${DateFormat('dd/MM/yyyy').format(selectedDay)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontSize: MediaQuery.of(context).size.width * 0.035,
+                      ),
+                      textAlign: TextAlign.start,
+                    ),
+                    TextButton.icon(
+                      icon: Icon(Icons.add, color: Colors.white),
+                      label: Text('Thêm đồ', style: TextStyle(color: Colors.white)),
+                      onPressed: () => _showSelectOutfitDialog(dateKey),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                        minimumSize: Size(0, 36),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Outfit images
+                SizedBox(
+                  height: 70,
+                  child: outfitId == null
+                      ? Center(
+                          child: Text(
+                            'Chưa có trang phục cho ngày này',
+                            style: TextStyle(
+                              color: Colors.white.withAlpha((0.8 * 255).round()),
+                              fontSize: MediaQuery.of(context).size.width * 0.035,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : _buildOutfitImages(outfitId),
+                ),
+                const SizedBox(height: 22),
+                // Nếu chưa có outfit thì chỉ hiện nút Thêm đồ, nếu có thì hiện Đổi đồ và Xóa
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (outfitId == null) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _showSelectOutfitDialog(dateKey),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimaryBlue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: MediaQuery.of(context).size.height * 0.015,
+                                ),
+                                elevation: 0,
+                              ),
+                              child: FittedBox(
+                                child: Text(
+                                  "Thêm đồ",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    } else {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _showSelectOutfitDialog(dateKey),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimaryBlue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: MediaQuery.of(context).size.height * 0.015,
+                                ),
+                                elevation: 0,
+                              ),
+                              child: FittedBox(
+                                child: Text(
+                                  "Đổi đồ",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                final docRef = FirebaseFirestore.instance
+                                    .collection('calendar_outfits')
+                                    .doc(dateKey);
+                                await docRef.delete();
+                                await loadCalendarDataFromFirestore();
+                                setState(() {
+                                  _selectedDay = null;
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFFE74C3C),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: MediaQuery.of(context).size.height * 0.015,
+                                ),
+                                elevation: 0,
+                              ),
+                              child: FittedBox(
+                                child: Text(
+                                  "Xóa",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
+  Widget _buildOutfitCard(Map<String, dynamic> outfit, int index) {
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('clothing_items')
+          .where(FieldPath.documentId, whereIn: List<String>.from(outfit['itemIds'] ?? []))
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final clothingItems = snapshot.data?.docs ?? [];
+
+        return InkWell(
+          onTap: () async {
+            final dateKey = DateFormat('yyyy-MM-dd').format(_selectedDay!);
+            final uid = FirebaseAuth.instance.currentUser?.uid;
+
+            final docRef = FirebaseFirestore.instance.collection('calendar_outfits').doc(dateKey);
+
+            await docRef.set({
+              'outfitId': outfit['id'],
+              'uid': uid,
+              'date': dateKey,
+            });
+            
+            Navigator.pop(context);
+            await loadCalendarDataFromFirestore();
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.darkgrey.withAlpha((0.2 * 255).round())),
+
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          outfit['prompt'] ?? "Outfit ${index + 1}",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlue.withAlpha((0.1 * 255).round()),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  item['label'] as String,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF2C3E50),
-                    fontWeight: FontWeight.bold,
+                if (clothingItems.isNotEmpty)
+                  SizedBox(
+                    height: 70, // Giảm chiều cao
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: clothingItems.length,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemBuilder: (context, i) {
+                        final item = clothingItems[i].data() as Map<String, dynamic>;
+                        final base64 = item['base64Image'] ?? '';
+                        return Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          width: 50, // Giảm kích thước
+                          height: 50,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: AppColors.lightGray,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: base64.startsWith('data:image')
+                                ? Image.memory(
+                                    base64Decode(base64.split(',').last),
+                                    fit: BoxFit.cover,
+                                  )
+                                : const Icon(Icons.image_not_supported, size: 20),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 
-  Widget _buildAIStylishPrompt() {
-    return Material(
-      elevation: 2,
-      borderRadius: BorderRadius.circular(18),
-      color: const Color(0xFFFAFAFA),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ChatScreen()),
-          );
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            color: const Color(0xFFFAFAFA),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: const Color(0xFFF5F5F5),
-                child: const Icon(Icons.smart_toy, color: Constants.primaryBlue, size: 32),
-              ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DefaultTextStyle(
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      child: AnimatedTextKit(
-                        animatedTexts: _generateAnimatedTexts(),
-                        repeatForever: true,
-                        pause: const Duration(milliseconds: 1200),
-                        isRepeatingAnimation: true,
-                        displayFullTextOnTap: true,
-                        stopPauseOnTap: true,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "AI Stylist",
-                      style: TextStyle(
-                        fontFamily: 'BeautiqueDisplay',
-                        fontSize: 15,
-                        fontStyle: FontStyle.italic,
-                        color: Color(0xFF2C3E50),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  List<Widget> _buildDayCells() {
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final lastDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
+    final daysInMonth = lastDayOfMonth.day;
+    final firstWeekday = (firstDayOfMonth.weekday % 7);
+    List<Widget> cells = [];
 
-  Widget _buildSearchBox() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(100),
-        color: const Color(0xFFF2F2F2),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: "Gợi ý phong cách?",
-                border: InputBorder.none,
-                hintStyle: TextStyle(color: Color(0xFF7D7F85)),
+    for (int i = 0; i < firstWeekday; i++) {
+      cells.add(Container());
+    }
+
+    for (int day = 1; day <= daysInMonth; day++) {
+      final date = DateTime(_focusedDay.year, _focusedDay.month, day);
+      final key = DateFormat('yyyy-MM-dd').format(date);
+      final data = _calendarData[key];
+      final isToday = date.day == DateTime.now().day &&
+          date.month == DateTime.now().month &&
+          date.year == DateTime.now().year;
+
+      cells.add(
+        GestureDetector(
+          onTap: () { setState(() => _selectedDay = date);
+                      _showOutfitDisplayDialog(context);},
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: isToday
+                  ? AppColors.black
+                  : _selectedDay == date
+                      ? AppColors.primaryBlue.withAlpha((0.1 * 255).round())
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(
+                color: _selectedDay == date
+                    ? AppColors.primaryBlue
+                    : Colors.transparent,
+                width: 2,
               ),
             ),
-          ),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black,
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              iconSize: 18,
-              icon: const Icon(Icons.arrow_forward, color: Colors.white),
-              onPressed: () {
-                final input = _searchController.text.trim();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      weatherDescription: weatherDescription,
-                      temperature: temperature,
-                      initialQuery: input.isNotEmpty ? input : null,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      fontWeight:  FontWeight.bold,
+                      color: isToday ? Colors.white : AppColors.black,
+                      fontSize: 14, // Giảm font size
+                      fontFamily: 'Montserrat'
                     ),
                   ),
-                );
-              },
+                ),
+                if (data?['outfitId'] != null)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    width: 4, // Giảm kích thước
+                    height: 4,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryBlue,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    }
+
+    while (cells.length < 42) {
+      cells.add(Container());
+    }
+
+    return cells;
   }
 
-  Widget _buildRecentOutfitsTitle() {
-    return const Text("Recent Outfits", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50), fontSize: 18));
-  }
+Widget _buildHorizontalWeekView() {
+  final today = DateTime.now();
+  final screenWidth = MediaQuery.of(context).size.width;
 
-  Widget _buildRecentOutfits() {
-    double height = ResponsiveHelper.isMobile(context) ? 140 : 140;
-    double width = height * 0.7;
-    return SizedBox(
-      height: height,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: outfitImagePaths.map((url) => _recentOutfitImg(url, width, height)).toList(),
-      ),
-    );
-  }
-
-  Widget _recentOutfitImg(String url, double width, double height) {
-    return Container(
-      margin: const EdgeInsets.only(right: 10),
-      width: width,
-      height: height,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: CachedNetworkImage(
-          imageUrl: url,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+  return Column(
+    children: [ Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primaryBlue, Color(0xFFCACACA)],
         ),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.only(top: 16, left: 8, right: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 255, 255, 255)),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Text(
+                    'Thời tiết tuần này',
+                    style: TextStyle(
+                      color: const Color.fromARGB(255, 255, 255, 255),
+                      fontWeight: FontWeight.bold,
+                      fontSize: MediaQuery.of(context).size.width * 0.045,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.calendar_month, color: Color.fromARGB(255, 255, 255, 255)),
+                  onPressed: () => setState(() {
+                    _isMonthlyView = !_isMonthlyView;
+                    _selectedDay = null;
+                  }),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 50),
+          // Weather section (white alpha background)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha((0.1 * 255).round()),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: WeeklyPlanner(lat: 21.0285, lon: 105.8542),
+          ),
+        const SizedBox(height: 20),
+        ])), const SizedBox(height: 20),
+          // Daily calendar section with horizontal scroll
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.only(top: 20, bottom: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha((0.05 * 255).round()),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    'Hàng ngày',
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.04,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Horizontal Scrollable Day List
+                SizedBox(
+                  height: 90,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: 7,
+                    itemBuilder: (context, index) {
+                      final date = today.add(Duration(days: index));
+                      final key = DateFormat('yyyy-MM-dd').format(date);
+                      final data = _calendarData[key];
+                      final isSelected = _selectedDay != null &&
+                          _selectedDay!.day == date.day &&
+                          _selectedDay!.month == date.month &&
+                          _selectedDay!.year == date.year;
+
+                      final weekdays = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
+                      final dayName = weekdays[date.weekday - 1];
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedDay = date;
+                          });
+                        },
+                        child: Container(
+                          width: 70,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primaryBlue : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                dayName,
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.028,
+                                  color: isSelected ? Colors.white : AppColors.darkgrey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                date.day.toString(),
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.045,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? Colors.white : AppColors.black,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              if (data?['outfitId'] != null)
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? Colors.white : kPrimaryBlue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.checkroom,
+                                    size: 10,
+                                    color: isSelected ? kPrimaryBlue : Colors.white,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          )
+        ]
+      );
+        
+    
+  
+}
+
+ @override
+  Widget build(BuildContext context) {
+    final daysOfWeek = [ 'CN','Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7'];
+    
+    return Scaffold(
+      backgroundColor: AppColors.lightGray,
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+              ),
+            )
+          : Column(
+              children: [
+                if (_isMonthlyView) Padding(
+                  padding: const EdgeInsets.only(top: 16, left: 8, right: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: AppColors.black),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Thời tiết tuần này',
+                          style: TextStyle(
+                            color: AppColors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: MediaQuery.of(context).size.width * 0.045,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.calendar_month, color: Color.fromARGB(255, 0, 0, 0)),
+                        onPressed: () => setState(() {
+                          _isMonthlyView = !_isMonthlyView;
+                          _selectedDay = null;
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        if (_isMonthlyView) ...[
+                          Container(
+                            margin: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    kPrimaryBlue,
+                                    
+                                    const Color.fromARGB(255, 148, 185, 237),
+                                    const Color.fromARGB(255, 180, 214, 231),
+                                    const Color.fromARGB(255, 148, 185, 237),
+                                    const Color.fromARGB(255, 220, 227, 234),
+                                  ],
+                                  //stops: [0.1,0.3,0.2,0.1,0.3]
+                                ),
+                                border: Border.all(
+                                  color: const Color.fromARGB(255, 77, 142, 195), // Màu viền
+                                  width: 2, // Độ dày viền
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha((0.05 * 255).round()),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  )
+                                ]),
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 12),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.chevron_left,
+                                            color: AppColors.black),
+                                        onPressed: () => setState(() {
+                                          _focusedDay = DateTime(
+                                              _focusedDay.year,
+                                              _focusedDay.month - 1,
+                                              1);
+                                          _selectedDay = null;
+                                        }),
+                                      ),
+                                      Flexible(
+                                        child: Text(
+                                          DateFormat('MMMM yyyy')
+                                              .format(_focusedDay),
+                                          style: TextStyle(
+                                            fontSize: MediaQuery.of(context).size.width * 0.045,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.black,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.chevron_right,
+                                            color: AppColors.black),
+                                        onPressed: () => setState(() {
+                                          _focusedDay = DateTime(
+                                              _focusedDay.year,
+                                              _focusedDay.month + 1,
+                                              1);
+                                          _selectedDay = null;
+                                        }),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8, horizontal: 16),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: daysOfWeek
+                                        .map((d) => Expanded(
+                                              child: Center(
+                                                child: Text(
+                                                  d,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize: MediaQuery.of(context).size.width * 0.03,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ))
+                                        .toList(),
+                                  ),
+                                ),
+                                // Sử dụng AspectRatio để đảm bảo tỷ lệ phù hợp
+                                AspectRatio(
+                                  aspectRatio: 7/6, // 7 columns, 6 rows
+                                  child: GridView.count(
+                                    crossAxisCount: 7,
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.all(8),
+                                    children: _buildDayCells(),
+                                    
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          _buildHorizontalWeekView(),
+                        ],
+                        // Nút mở dialog chi tiết ngày
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: ElevatedButton(
+                            onPressed: () => _showOutfitDisplayDialog(context),
+                            child: Text('Chi tiết ngày'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kPrimaryBlue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                vertical: MediaQuery.of(context).size.height * 0.015,
+                                horizontal: 32,
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Đặt _buildOutfitDisplay bên ngoài Expanded và SingleChildScrollView
+                // _buildOutfitDisplay(), // This line is removed as per the edit hint
+              ],
+            ),
     );
   }
+}
+class WeeklyPlanner extends StatefulWidget {
+  final double lat;
+  final double lon;
+  const WeeklyPlanner({required this.lat, required this.lon, super.key});
 
-  Widget buildWeatherCard() {
-    if (weatherDescription == null || temperature == null || weatherIconCode == null) {
-      return Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Constants.primaryBlue,
-          boxShadow: const [
-            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 3)),
-          ],
+  @override
+  State<WeeklyPlanner> createState() => _WeeklyPlannerState();
+}
+
+class _WeeklyPlannerState extends State<WeeklyPlanner> {
+  List<Map<String, dynamic>>? forecast;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    loadWeather();
+  }
+
+  void loadWeather() async {
+    try {
+      final data = await WeatherService.fetchWeeklyForecast(widget.lat, widget.lon);
+      setState(() {
+        forecast = data;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-        alignment: Alignment.centerLeft,
-        child: const Row(
+      );
+    }
+    if (_error != null || forecast == null || forecast!.isEmpty) {
+      return const Center(
+        child: Text(
+          'Weather unavailable',
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
+    return buildWeeklyWeatherCard(forecast!);
+  }
+Widget buildWeeklyWeatherCard(List<Map<String, dynamic>> dailyForecasts) {
+  final today = DateTime.now();
+  final weekdayNames = ['CN', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7'];
+
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: List.generate(5, (index) {
+      final date = today.add(Duration(days: index));
+      final dayName = weekdayNames[date.weekday % 7];
+
+      // Tìm forecast đúng ngày
+      final forecast = dailyForecasts.firstWhere(
+        (f) {
+          DateTime? dt;
+          if (f.containsKey('dt_txt')) {
+            dt = DateTime.tryParse(f['dt_txt']);
+          } else if (f.containsKey('date')) {
+            dt = DateTime.tryParse(f['date']);
+          }
+          return dt != null && dt.year == date.year && dt.month == date.month && dt.day == date.day;
+        },
+        orElse: () => {},
+      );
+
+      if (forecast.isEmpty || forecast['main'] == null || forecast['weather'] == null) {
+        return SizedBox(
+          width: 40,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(dayName, style: const TextStyle(fontSize: 12, color: Colors.white)),
+              const SizedBox(height: 4),
+              const Icon(Icons.help_outline, size: 32, color: Colors.white54),
+              const SizedBox(height: 4),
+              const Text('N/A', style: TextStyle(fontSize: 14, color: Colors.white54)),
+            ],
+          ),
+        );
+      }
+
+      final temp = (forecast['main']['temp'] as num).round();
+      final weatherIcon = forecast['weather'][0]['icon'];
+      final dtTxt = forecast['dt_txt'] ?? '';
+      String hourStr = '';
+      if (dtTxt.isNotEmpty) {
+        final dt = DateTime.tryParse(dtTxt);
+        if (dt != null) {
+          hourStr = '${dt.hour.toString().padLeft(2, '0')}h';
+        }
+      }
+
+      return SizedBox(
+        width: 40,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('🌤️', style: TextStyle(fontSize: 28, color: Colors.white)),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                "Đang tải thời tiết...",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            Text(dayName, style: const TextStyle(fontSize: 12, color: Colors.white)),
+            if (hourStr.isNotEmpty)
+              Text(hourStr, style: const TextStyle(fontSize: 10, color: Colors.white70)),
+            const SizedBox(height: 4),
+            Image.network(
+              'https://openweathermap.org/img/wn/$weatherIcon.png',
+              width: 32,
+              height: 32,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.cloud,
+                size: 32,
+                color: Color.fromARGB(255, 255, 0, 0),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$temp°',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
           ],
         ),
       );
-    }
+    }),
+  );
+}
 
-    final iconUrl = 'https://openweathermap.org/img/wn/$weatherIconCode@4x.png';
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        color: Constants.primaryBlue,
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(1, 2))],
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Image.network(iconUrl, width: 80, height: 80, fit: BoxFit.cover),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${temperature!.toStringAsFixed(1)}°C',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  weatherDescription!.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$cityName, $countryCode',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

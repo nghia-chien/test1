@@ -9,6 +9,7 @@ import 'notification.dart';
 import 'profile_page2.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 // Placeholder cho SettingsPage nếu chưa có
 class SettingsPage extends StatelessWidget {
@@ -78,8 +79,8 @@ class _MainScreenState extends State<MainScreen> {
       label: 'Mạng xã hội',
     ),
     SidebarItem(
-      icon: Icons.checkroom_outlined,
-      selectedIcon: Icons.checkroom,
+      icon: Icons.door_sliding_outlined,
+      selectedIcon: Icons.door_sliding_rounded,
       label: 'Tủ đồ',
     ),
     SidebarItem(
@@ -110,72 +111,6 @@ class _MainScreenState extends State<MainScreen> {
       _isCollapsed = !_isCollapsed;
     });
   }
-
-  // Widget buildCustomBottomBar() {
-  //   final List<SidebarItem> items = _sidebarItems.take(4).toList();
-  //
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  //     //rmargin: const EdgeInsets.all(16),
-  //     decoration: BoxDecoration(
-  //       color: Color(0xFF209CFF),
-  //         borderRadius: const BorderRadius.only(
-  //           topLeft: Radius.circular(30),
-  //           topRight: Radius.circular(30),
-  //         ),
-  //     ),
-  //     child: Row(
-  //       mainAxisAlignment: MainAxisAlignment.spaceAround,
-  //       children: items.asMap().entries.map((entry) {
-  //         final int index = entry.key;
-  //         final item = entry.value;
-  //         final bool isSelected = _selectedIndex == index;
-  //
-  //         return GestureDetector(
-  //           onTap: () => _onItemTapped(index),
-  //           child: AnimatedContainer(
-  //             duration: Duration(milliseconds: 200),
-  //             padding: EdgeInsets.symmetric(horizontal: isSelected ? 12 : 0, vertical: 8),
-  //             decoration: BoxDecoration(
-  //               color: isSelected ? Colors.white : Colors.transparent,
-  //               borderRadius: BorderRadius.circular(32),
-  //             ),
-  //             child: Row(
-  //               children: [
-  //                 Container(
-  //                   padding: EdgeInsets.all(8),
-  //                   decoration: BoxDecoration(
-  //                     color: Colors.white,
-  //                     shape: BoxShape.circle,
-  //                     border: isSelected
-  //                         ? Border.all(color: Colors.white, width: 2)
-  //                         : Border.all(color: Colors.transparent),
-  //                   ),
-  //                   child: Icon(
-  //                     isSelected ? item.selectedIcon : item.icon,
-  //                     color: isSelected ? Color(0xFF209CFF) : Colors.black,
-  //                     size: 20,
-  //                   ),
-  //                 ),
-  //                 if (isSelected) ...[
-  //                   SizedBox(width: 8),
-  //                   Text(
-  //                     item.label,
-  //                     style: TextStyle(
-  //                       color: Color(0xFF209CFF),
-  //                       fontWeight: FontWeight.bold,
-  //                      
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ],
-  //             ),
-  //           ),
-  //         );
-  //       }).toList(),
-  //     ),
-  //   );
-  // }
 
 
   @override

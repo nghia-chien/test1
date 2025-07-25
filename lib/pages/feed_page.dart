@@ -641,6 +641,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       child: InkWell(
+                        customBorder: CircleBorder(side:BorderSide(color: Colors.black)),
                         onTap: _showCreatePostDialog,
                         borderRadius: BorderRadius.circular(20),
                         child: const Padding(

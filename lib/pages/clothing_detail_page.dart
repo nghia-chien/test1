@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cursor/main.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -350,7 +351,7 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
     final base64Image = selectedItem?['base64Image'];
     
     return Container(
-      height: 300,
+      height: 500,
       width: double.infinity,
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey[300]!),
@@ -585,12 +586,12 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
         actions: [
           if (_isEditing) ...[
             IconButton(
-              icon: const Icon(Icons.save, color: Colors.green),
+              icon: const Icon(Icons.check, color: Color.fromARGB(255, 0, 0, 0)),
               onPressed: _saveChanges,
               tooltip: 'Lưu thay đổi',
             ),
             IconButton(
-              icon: const Icon(Icons.cancel, color: Colors.red),
+              icon: const Icon(Icons.clear, color: Color.fromARGB(255, 0, 0, 0)),
               onPressed: () {
                 setState(() {
                   _isEditing = false;
@@ -601,7 +602,7 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
             ),
           ] else
             IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
+              icon: const Icon(Icons.edit, color: Colors.black),
               onPressed: () => setState(() => _isEditing = true),
               tooltip: 'Chỉnh sửa',
             ),
@@ -636,8 +637,10 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
       if (!displayOccasions.contains(o)) displayOccasions.add(o);
     }
     return Form(
+      
       key: _formKey,
       child: Column(
+        
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildMainImage(),
@@ -645,6 +648,7 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
           _buildThumbnailList(),
           const SizedBox(height: 20),
           Card(
+            color: Colors.white,
             elevation: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -655,7 +659,7 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
                     'Chỉnh sửa thông tin',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[800],
+                      color: Colors.blue[900],
                     ),
                   ),
                   const Divider(),
@@ -669,7 +673,7 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
-                      prefixIcon: Icon(Icons.label),
+                      prefixIcon: Icon(Icons.edit,color: Colors.black,),
                     ),
                     onChanged: (value) => clothingData!['name'] = value,
                     validator: (value) => 
@@ -678,20 +682,24 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
                   const SizedBox(height: 16),
 
                   // Category
-                  DropdownButtonFormField(
+                  DropdownButtonFormField(                   
+                    dropdownColor: const Color.fromARGB(255, 255, 255, 255),
+                    iconEnabledColor: const Color.fromARGB(255, 0, 0, 0),
                     value: clothingData!['category'],
                     items: categories.map((cat) => 
-                        DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                        DropdownMenuItem(value: cat, child: Text(cat),)).toList(),
                     onChanged: (value) => clothingData!['category'] = value,
                     decoration: const InputDecoration(
                       labelText: 'Loại',
-                      prefixIcon: Icon(Icons.category),
+                      prefixIcon: Icon(Icons.category,color: Colors.black,),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // Color
                   DropdownButtonFormField(
+                    dropdownColor: const Color.fromARGB(255, 255, 255, 255),
+                    iconEnabledColor: const Color.fromARGB(255, 0, 0, 0),
                     value: clothingData!['color'],
                     items: [
                       ...colors,
@@ -701,17 +709,18 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
                     onChanged: (value) => clothingData!['color'] = value,
                     decoration: const InputDecoration(
                       labelText: 'Màu sắc',
-                      prefixIcon: Icon(Icons.palette),
+                      prefixIcon: Icon(Icons.palette,color: Colors.black,),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // Style
                   TextFormField(
+                    
                     initialValue: clothingData!['style'] ?? '',
                     decoration: const InputDecoration(
                       labelText: 'Phong cách',
-                      prefixIcon: Icon(Icons.style),
+                      prefixIcon: Icon(Icons.style,color: Colors.black,),
                     ),
                     onChanged: (value) => clothingData!['style'] = value,
                   ),
@@ -719,25 +728,31 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
 
                   // Season
                   DropdownButtonFormField(
+                    dropdownColor: const Color.fromARGB(255, 255, 255, 255),
+                    iconEnabledColor: const Color.fromARGB(255, 0, 0, 0),
                     value: clothingData!['season'],
                     items: seasons.map((season) => 
                         DropdownMenuItem(value: season, child: Text(season))).toList(),
                     onChanged: (value) => clothingData!['season'] = value,
                     decoration: const InputDecoration(
                       labelText: 'Mùa',
-                      prefixIcon: Icon(Icons.wb_sunny),
+                      prefixIcon: Icon(Icons.wb_sunny,color: Colors.black,),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // Occasions
                   const Text(
+                    
                     '🎯 Dịp sử dụng:',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   ...displayOccasions.map((o) {
                     final selected = (clothingData!['occasions'] ?? []).contains(o);
                     return CheckboxListTile(
+                      selectedTileColor: const Color.fromARGB(255, 255, 255, 255),
+                      checkColor: const Color.fromARGB(255, 255, 255, 255),
+                      activeColor: const Color.fromARGB(255, 0, 0, 0),
                       value: selected,
                       title: Text(o),
                       onChanged: (val) => _toggleOccasion(o, val!),

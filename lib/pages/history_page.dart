@@ -13,6 +13,7 @@ import 'profile_page2.dart';
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
 
+
   @override
   State<HistoryPage> createState() => _HistoryPageState();
 }
@@ -21,7 +22,13 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
   late TabController _tabController;
   String _selectedFilter = 'all';
   Map<String, int> _activityStats = {};
-
+  static const Color primaryBlue = Color(0xFF209CFF);
+  static const Color secondaryGrey = Color(0xFF7D7F85);
+  static const Color darkgrey = Color(0xFF231f20);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color errorRed = Color(0xFFD32F2F);
+  static const Color darkBlue = Color(0xFF006cff);
+  static const Color black =Color(0xFF000000);
   final List<String> _filters = [
     'all',
     'upload',
@@ -73,15 +80,15 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_sweep, color: Constants.darkBlueGrey),
+            icon: const Icon(Icons.delete_rounded, color: Constants.darkBlueGrey),
             onPressed: _showClearAllDialog,
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Constants.primaryBlue,
+          labelColor: primaryBlue,
           unselectedLabelColor: Constants.secondaryGrey,
-          indicatorColor: Constants.primaryBlue,
+          indicatorColor: primaryBlue,
           tabs: const [
             Tab(text: 'Tất cả'),
             Tab(text: 'Thống kê'),
@@ -109,7 +116,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                 : ActivityHistoryService.getActivitiesByAction(_selectedFilter),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: Constants.primaryBlue));
+                return const Center(child: CircularProgressIndicator(color: primaryBlue));
               }
 
               if (snapshot.hasError) {
@@ -188,20 +195,20 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_getFilterLabel(filter), style: TextStyle(color: isSelected ? Constants.primaryBlue : Constants.secondaryGrey)),
+                  Text(_getFilterLabel(filter), style: TextStyle(color: isSelected ? primaryBlue : Constants.secondaryGrey)),
                   if (count > 0) ...[
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isSelected ? Constants.primaryBlue.withOpacity(0.1) : Constants.secondaryGrey.withOpacity(0.1),
+                        color: isSelected ? primaryBlue.withOpacity(0.1) : Constants.secondaryGrey.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         count.toString(),
                         style: TextStyle(
                           fontSize: 12,
-                          color: isSelected ? Constants.primaryBlue : Constants.secondaryGrey,
+                          color: isSelected ? primaryBlue : Constants.secondaryGrey,
                         ),
                       ),
                     ),
@@ -215,8 +222,8 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                 });
               },
               backgroundColor: Constants.pureWhite,
-              selectedColor: Constants.primaryBlue.withOpacity(0.15),
-              checkmarkColor: Constants.primaryBlue,
+              selectedColor: primaryBlue.withOpacity(0.15),
+              checkmarkColor: primaryBlue,
             ),
           );
         },
@@ -255,7 +262,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Constants.primaryBlue.withOpacity(0.06),
+            color: primaryBlue.withOpacity(0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -288,12 +295,12 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: Constants.primaryBlue.withOpacity(0.1),
+            color: primaryBlue.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             activity.actionIcon,
-            color: Constants.primaryBlue,
+            color: primaryBlue,
             size: 24,
           ),
         ),
@@ -344,25 +351,11 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
             ],
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Constants.secondaryGrey),
-          onSelected: (value) {
-            if (value == 'delete') {
-              _showDeleteDialog(activity);
-            }
+        trailing: IconButton(
+          icon: const Icon(Icons.disabled_by_default, color: Colors.red),
+          onPressed: () {
+            _showDeleteDialog(activity);
           },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Constants.darkBlueGrey),
-                  SizedBox(width: 8),
-                  Text('Xóa', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -388,7 +381,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                 'Tổng hoạt động',
                 totalActivities.toString(),
                 Icons.analytics,
-                Constants.primaryBlue,
+                primaryBlue,
               ),
               const SizedBox(height: 16),
               const Text(
@@ -416,7 +409,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Constants.primaryBlue.withOpacity(0.06),
+            color: primaryBlue.withOpacity(0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -428,10 +421,10 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Constants.primaryBlue.withOpacity(0.1),
+              color: primaryBlue.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: Constants.primaryBlue, size: 30),
+            child: Icon(icon, color: primaryBlue, size: 30),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -489,7 +482,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Constants.primaryBlue.withAlpha((255 * 0.03).round()),
+              color: primaryBlue.withAlpha((255 * 0.03).round()),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -501,12 +494,12 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Constants.primaryBlue.withAlpha((255 * 0.1).round()),
+                color: primaryBlue.withAlpha((255 * 0.1).round()),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 activity.actionIcon,
-                color: Constants.primaryBlue,
+                color: primaryBlue,
                 size: 20,
               ),
             ),
@@ -524,13 +517,13 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Constants.primaryBlue.withAlpha((255 * 0.1).round()),
+                color: primaryBlue.withAlpha((255 * 0.1).round()),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 count.toString(),
                 style: const TextStyle(
-                  color: Constants.primaryBlue,
+                  color: primaryBlue,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -592,6 +585,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
 class PostDetailPage extends StatelessWidget {
   final String postId;
   const PostDetailPage({required this.postId, super.key});
+  
 
   @override
   Widget build(BuildContext context) {
@@ -601,7 +595,7 @@ class PostDetailPage extends StatelessWidget {
         future: FirebaseFirestore.instance.collection('posts').doc(postId).get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Constants.primaryBlue));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF209CFF)));
           }
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return const Center(child: Text('Không tìm thấy bài viết.', style: TextStyle(color: Constants.secondaryGrey)));
@@ -650,7 +644,7 @@ class RelatedPostsPage extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Constants.primaryBlue));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF209CFF)));
           }
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
@@ -662,7 +656,7 @@ class RelatedPostsPage extends StatelessWidget {
               final activity = ActivityHistory.fromFirestore(docs[index]);
               final postId = activity.metadata?['postId'];
               return ListTile(
-                leading: Icon(activity.actionIcon, color: Constants.primaryBlue),
+                leading: Icon(activity.actionIcon, color: Color(0xFF209CFF)),
                 title: Text(activity.description),
                 subtitle: Text(activity.timeAgo),
                 onTap: postId != null

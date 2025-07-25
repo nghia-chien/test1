@@ -191,7 +191,7 @@ void _showNotifications() {
                         onPressed: _showNotifications,
                       ),
                       IconButton(
-                        icon: const Icon(Icons.account_circle_outlined, color: Colors.white, size: 28),
+                        icon: const Icon(Icons.person, color: Colors.white, size: 28),
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -275,7 +275,7 @@ void _showNotifications() {
   Widget buildActionGrid(BuildContext context) {
     final actions = [
       {
-        'icon': Icons.upload_file,
+        'icon': Icons.add_photo_alternate,
         'label': 'Thêm đồ',
         'onTap': () {
           Navigator.push(
@@ -285,7 +285,7 @@ void _showNotifications() {
         }
       },
       {
-        'icon': Icons.style_outlined, 
+        'icon': Icons.bubble_chart , 
         'label': 'Tạo outfit', 
         'onTap': () {
           Navigator.push(
@@ -295,7 +295,7 @@ void _showNotifications() {
       }
       },
       {
-        'icon': Icons.calendar_today,
+        'icon': Icons.calendar_month,
         'label': 'Kế hoạch',
         'onTap': () {
           Navigator.push(
@@ -305,8 +305,8 @@ void _showNotifications() {
         }
       },
       {
-        'icon': Icons.history,
-        'label': 'Lịch sử',
+        'icon': Icons.leaderboard,
+        'label': 'Hoạt động',
         'onTap': () {
           Navigator.push(
             context,
@@ -565,15 +565,18 @@ Widget _recentOutfitImg(String url, double size) {
 
     return Container(
       decoration: BoxDecoration(
+        //border: Border.all(color: secondaryGrey,width: 1),
         borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomCenter,
           colors: [
-            Color.fromARGB(255, 151, 197, 233),
+            Color.fromARGB(255, 208, 231, 247),
+            Color.fromARGB(255, 74, 167, 239),
+            AppColors.primaryBlue,
             AppColors.primaryBlue,
           ],
-          stops: [0.1, 0.8],
+          stops: [0.1,0.65, 0.35,0.1],
         ),
         boxShadow: [
           BoxShadow(
@@ -589,40 +592,45 @@ Widget _recentOutfitImg(String url, double size) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            //crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                '${temperature!.toStringAsFixed(1)}°C',
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Image.network(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  
+                Image.network(
                 iconUrl,
                 width: 60,
                 height: 50,
                 fit: BoxFit.cover,
               ),
+                  const SizedBox(height: 4),
+                  Text(
+                    weatherDescription!.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+              const SizedBox(width: 10),
+              Text(
+                    '${temperature!.toStringAsFixed(1)}°C',
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            weatherDescription!.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: Colors.white,
-              letterSpacing: 0.5,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
           Text(
             '$cityName, $countryCode',
             style: const TextStyle(
@@ -630,12 +638,13 @@ Widget _recentOutfitImg(String url, double size) {
               fontWeight: FontWeight.w400,
               color: Colors.white,
             ),
-            textAlign: TextAlign.center,
+            textAlign: TextAlign.left,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
+
     );
 }
 }
