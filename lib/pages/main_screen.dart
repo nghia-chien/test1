@@ -14,6 +14,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
+
+
   @override
   Widget build(BuildContext context) {
     return const Center(child: Text('Cài đặt', style: TextStyle(fontSize: 24)));
@@ -33,6 +35,14 @@ class _MainScreenState extends State<MainScreen> {
   String? _userName;
   String? email;
   String? _imageUrl;
+
+  static const Color primaryBlue = Color(0xFF209CFF);
+  static const Color secondaryGrey = Color(0xFF7D7F85);
+  static const Color darkgrey = Color(0xFF231f20);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color errorRed = Color(0xFFD32F2F);
+  static const Color darkBlue = Color(0xFF006cff);
+  static const Color black =Color(0xFF000000);
 
   @override
   void initState() {
@@ -101,87 +111,79 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  void _showNotifications() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => const NotificationPanel(),
-    );
-  }
+  // Widget buildCustomBottomBar() {
+  //   final List<SidebarItem> items = _sidebarItems.take(4).toList();
+  //
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  //     //rmargin: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Color(0xFF209CFF),
+  //         borderRadius: const BorderRadius.only(
+  //           topLeft: Radius.circular(30),
+  //           topRight: Radius.circular(30),
+  //         ),
+  //     ),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //       children: items.asMap().entries.map((entry) {
+  //         final int index = entry.key;
+  //         final item = entry.value;
+  //         final bool isSelected = _selectedIndex == index;
+  //
+  //         return GestureDetector(
+  //           onTap: () => _onItemTapped(index),
+  //           child: AnimatedContainer(
+  //             duration: Duration(milliseconds: 200),
+  //             padding: EdgeInsets.symmetric(horizontal: isSelected ? 12 : 0, vertical: 8),
+  //             decoration: BoxDecoration(
+  //               color: isSelected ? Colors.white : Colors.transparent,
+  //               borderRadius: BorderRadius.circular(32),
+  //             ),
+  //             child: Row(
+  //               children: [
+  //                 Container(
+  //                   padding: EdgeInsets.all(8),
+  //                   decoration: BoxDecoration(
+  //                     color: Colors.white,
+  //                     shape: BoxShape.circle,
+  //                     border: isSelected
+  //                         ? Border.all(color: Colors.white, width: 2)
+  //                         : Border.all(color: Colors.transparent),
+  //                   ),
+  //                   child: Icon(
+  //                     isSelected ? item.selectedIcon : item.icon,
+  //                     color: isSelected ? Color(0xFF209CFF) : Colors.black,
+  //                     size: 20,
+  //                   ),
+  //                 ),
+  //                 if (isSelected) ...[
+  //                   SizedBox(width: 8),
+  //                   Text(
+  //                     item.label,
+  //                     style: TextStyle(
+  //                       color: Color(0xFF209CFF),
+  //                       fontWeight: FontWeight.bold,
+  //                      
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ],
+  //             ),
+  //           ),
+  //         );
+  //       }).toList(),
+  //     ),
+  //   );
+  // }
+
 
   @override
 Widget build(BuildContext context) {
   final isWideScreen = ResponsiveHelper.isDesktop(context) || ResponsiveHelper.isTablet(context);
-  final isHomeMobile = !isWideScreen && _selectedIndex == 0;
 
-  return Scaffold(
-    appBar: isHomeMobile
-        ? PreferredSize(
-            preferredSize: const Size.fromHeight(110),
-            child: AppBar(
-              backgroundColor: Constants.pureWhite,
-              elevation: 0,
-              automaticallyImplyLeading: false,
-              flexibleSpace: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16, top: 18, right: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              color: Constants.primaryBlue,
-                              padding: const EdgeInsets.all(8),
-                              child: Image.asset(
-                                'images/logo.png',
-                                width: 40,
-                                height: 20,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'With honor. Be you',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Constants.darkBlueGrey,
-                              fontWeight: FontWeight.normal,
-                              letterSpacing: 0.2,
-                              fontFamily: 'BeautiqueDisplay',
-                            ),
-                          ),
-                          SizedBox(height: 5), // Thêm khoảng cách dưới cùng để tránh overflow
-                        ],
-                      ),
-                      const Spacer(),
-                      // Các icon
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined, color: Constants.darkBlueGrey, size: 25),
-                        onPressed: _showNotifications,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.account_circle_outlined, color: Constants.darkBlueGrey, size: 25),
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage(key: const PageStorageKey('profile'))));
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          )
-        : null,
-
+  return SafeArea( // ✅ Giữ cho toàn app
+    child:Scaffold(
     backgroundColor: Constants.pureWhite,
 
     body: isWideScreen
@@ -190,7 +192,7 @@ Widget build(BuildContext context) {
               _buildSidebar(),
               Expanded(
                 child: Container(
-                  color: Colors.white,
+                  color: primaryBlue,
                   child: IndexedStack(
                     index: _selectedIndex,
                     children: _pages,
@@ -213,13 +215,17 @@ Widget build(BuildContext context) {
             ],
           ),
 
-    bottomNavigationBar: isWideScreen
-        ? null
-        : BottomNavigationBar(
+    bottomNavigationBar: isWideScreen ? null : //buildCustomBottomBar(),
+
+        BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
             type: BottomNavigationBarType.fixed,
-            selectedItemColor: Constants.darkBlueGrey,
+            selectedLabelStyle: const TextStyle(
+              fontSize: 10, // 👈 nhỏ lại
+              fontWeight: FontWeight.w500,
+            ),
+            selectedItemColor: black,
             unselectedItemColor: Constants.secondaryGrey,
             selectedIconTheme: const IconThemeData(color: Constants.darkBlueGrey),
             unselectedIconTheme: const IconThemeData(color: Constants.secondaryGrey),
@@ -233,14 +239,8 @@ Widget build(BuildContext context) {
                   label: item.label,
                 )).toList(),
           ),
-  );
+  ),);
 }
-
-
-
-
-
-
 
 
   Widget _buildSidebar() {
@@ -251,7 +251,7 @@ Widget build(BuildContext context) {
         color: Constants.pureWhite,
         boxShadow: [
           BoxShadow(
-            color: Constants.darkBlueGrey.withOpacity(0.05),
+            color: Constants.darkBlueGrey.withAlpha((255 * 0.05).round()),
             blurRadius: 10,
             offset: const Offset(2, 0),
           ),
@@ -373,7 +373,7 @@ Widget build(BuildContext context) {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? Constants.primaryBlue.withOpacity(0.1) : Colors.transparent,
+              color: isSelected ? Constants.primaryBlue.withAlpha((255 * 0.1).round()) : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -437,7 +437,7 @@ Widget build(BuildContext context) {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: Constants.secondaryGrey.withOpacity(0.2),
+            color: Constants.secondaryGrey.withAlpha((255 * 0.2).round()),
             width: 1,
           ),
         ),

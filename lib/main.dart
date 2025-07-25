@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
    Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'BeautiqueDisplay'),
+      theme: ThemeData(fontFamily: 'Montserrat'),
       locale: const Locale('vi', 'VN'), // <-- ngôn ngữ tiếng Việt
       supportedLocales: const [
         Locale('vi', 'VN'),

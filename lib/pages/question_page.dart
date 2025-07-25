@@ -407,7 +407,7 @@ class _QuestionPageState extends State<QuestionPage> {
                       overflow: TextOverflow.ellipsis, // Ellipsis nếu tràn
                       style: TextStyle(
                         fontSize: 12,
-                        color: isSelected ? white.withOpacity(0.9) : mediumGray,
+                        color: isSelected ? white.withAlpha((255 * 0.9).round()) : mediumGray,
                         fontWeight: FontWeight.w400,
                         height: 1.2,
                       ),

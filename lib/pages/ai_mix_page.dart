@@ -27,7 +27,7 @@ class _AiMixPageState extends State<AiMixPage> {
   Set<String> _savedOutfitHashes = {};
   String _outfitHash(List<ClothingItem> items) => items.map((i) => i.id).toSet().join(',');
 
-  final Color primaryBlue = Constants.primaryBlue;
+  final Color primaryBlue = Color(0xFF209CFF);
   final Color lightGrey = Constants.secondaryGrey.withValues(alpha: 0.2);
   final Color midGrey = Constants.secondaryGrey;
 
@@ -398,23 +398,11 @@ class _AiMixPageState extends State<AiMixPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = ResponsiveHelper.isTablet(context) || ResponsiveHelper.isDesktop(context);
+    //final isWide = ResponsiveHelper.isTablet(context) || ResponsiveHelper.isDesktop(context);
     final crossAxisCount = ResponsiveHelper.getCrossAxisCount(context);
 
     return Scaffold(
       backgroundColor: Constants.pureWhite,
-      appBar: AppBar(
-        title: const Text('AI Outfit Generator',
-          style: TextStyle(color: Constants.darkBlueGrey, fontWeight: FontWeight.w300, fontSize: 20),
-        ),
-        backgroundColor: Constants.pureWhite,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Constants.darkBlueGrey),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: lightGrey),
-        ),
-      ),
       body: Column(
         children: [
           // Search and Filter Section - Cho phép cuộn

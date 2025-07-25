@@ -1,5 +1,6 @@
 // lib/services/weather_service.dart
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class WeatherService {
@@ -41,6 +42,31 @@ class WeatherService {
       return dailyMap.values.take(7).toList();
     } else {
       throw Exception('Failed to load forecast');
+    }
+  }
+
+  static IconData getWeatherIcon(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        return Icons.wb_sunny;
+      case 'clouds':
+        return Icons.cloud;
+      case 'rain':
+        return Icons.beach_access; // Or some other rain icon
+      case 'drizzle':
+        return Icons.grain;
+      case 'thunderstorm':
+        return Icons.flash_on;
+      case 'snow':
+        return Icons.ac_unit;
+      case 'mist':
+      case 'smoke':
+      case 'haze':
+      case 'dust':
+      case 'fog':
+        return Icons.cloud_queue;
+      default:
+        return Icons.wb_cloudy;
     }
   }
 }

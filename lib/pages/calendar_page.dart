@@ -1,3 +1,4 @@
+import 'package:cursor/main.dart';
 import 'package:flutter/material.dart';
 import '../constants/constants.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +7,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/weather_service.dart';
 import 'dart:convert';
 
+// Updated color scheme
+class AppColors {
+  static const Color lightGray = Color(0xFFF5F5F5);
+  static const Color primaryBlue = Color(0xFF209CFF);
+  static const Color secondaryGrey = Color(0xFF7D7F85);
+  static const Color darkgrey = Color(0xFF231f20);
+  static const Color errorRed = Color(0xFFD32F2F);
+  static const Color darkBlue = Color(0xFF006cff);
+  static const Color black =Color(0xFF000000);
+}
 
 class ClothingItem {
   final String id;
@@ -69,16 +80,21 @@ class _CalendarPageState extends State<CalendarPage> {
         .get();
 
     showDialog(
+      
       context: context,
       builder: (context) {
         return Dialog(
-          backgroundColor: Constants.pureWhite,
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           child: Container(
             padding: const EdgeInsets.all(20),
-            constraints: const BoxConstraints(maxHeight: 600),
+            // Sử dụng MediaQuery để đảm bảo dialog không vượt quá màn hình
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,30 +102,34 @@ class _CalendarPageState extends State<CalendarPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Select Outfit",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Constants.darkBlueGrey,
+                    Flexible(
+                      child: const Text(
+                        "Select Outfit",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Constants.darkBlueGrey),
+                      icon: const Icon(Icons.close, color: Colors.black),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                Expanded(
+                Flexible(
                   child: snapshot.docs.isEmpty
                       ? const Center(
                           child: Text(
                             'No outfits saved yet',
-                            style: TextStyle(color: Constants.secondaryGrey),
+                            style: TextStyle(color: AppColors.darkgrey),
                           ),
                         )
                       : ListView.builder(
+                          shrinkWrap: true,
                           itemCount: snapshot.docs.length,
                           itemBuilder: (context, index) {
                             final outfit = snapshot.docs[index].data();
@@ -126,98 +146,225 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  Future<List<Map<String, dynamic>>> fetchOutfitItems(String outfitId) async {
-    final outfitSnapshot = await FirebaseFirestore.instance
-        .collection('saved_outfits')
-        .doc(outfitId)
-        .get();
+  Widget _buildOutfitImages(String outfitId) {
+    return FutureBuilder<DocumentSnapshot>(
+      future:
+          FirebaseFirestore.instance.collection('saved_outfits').doc(outfitId).get(),
+      builder: (context, outfitSnapshot) {
+        if (outfitSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+              child: CircularProgressIndicator(color: Colors.white));
+        }
+        if (!outfitSnapshot.hasData || outfitSnapshot.data?.data() == null) {
+          return const Center(
+              child:
+                  Text("Outfit not found", style: TextStyle(color: Colors.white)));
+        }
 
-    final data = outfitSnapshot.data();
-    if (data == null || data['itemIds'] == null) return [];
+        final outfitData = outfitSnapshot.data!.data() as Map<String, dynamic>;
+        final itemIds = List<String>.from(outfitData['itemIds'] ?? []);
 
-    final List<dynamic> itemIds = data['itemIds'];
-    final List<Map<String, dynamic>> items = [];
+        if (itemIds.isEmpty) {
+          return const Center(
+              child: Text("Outfit has no items",
+                  style: TextStyle(color: Colors.white)));
+        }
 
-    for (final itemId in itemIds) {
-      final itemSnapshot = await FirebaseFirestore.instance
-          .collection('clothing_items')
-          .doc(itemId)
-          .get();
-      if (itemSnapshot.exists) {
-        final itemData = itemSnapshot.data();
-        if (itemData != null) items.add(itemData);
-      }
-    }
+        return FutureBuilder<QuerySnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('clothing_items')
+              .where(FieldPath.documentId, whereIn: itemIds)
+              .get(),
+          builder: (context, itemsSnapshot) {
+            if (itemsSnapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox();
+            }
+            if (!itemsSnapshot.hasData) {
+              return const Center(
+                  child: Text("Could not load items",
+                      style: TextStyle(color: Colors.white)));
+            }
 
-    return items;
-  }
+            final clothingItems = itemsSnapshot.data!.docs;
+            if (clothingItems.isEmpty) {
+              return const Center(
+                  child: Text("No items found for this outfit.",
+                      style: TextStyle(color: Colors.white)));
+            }
 
-  List<Widget> _buildDayCells() {
-    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
-    final lastDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
-    final daysInMonth = lastDayOfMonth.day;
-    final firstWeekday = (firstDayOfMonth.weekday % 7);
-    List<Widget> cells = [];
-
-    for (int i = 0; i < firstWeekday; i++) {
-      cells.add(Container());
-    }
-
-    for (int day = 1; day <= daysInMonth; day++) {
-      final date = DateTime(_focusedDay.year, _focusedDay.month, day);
-      final key = DateFormat('yyyy-MM-dd').format(date);
-      final data = _calendarData[key];
-
-      cells.add(
-        GestureDetector(
-          onTap: () => setState(() => _selectedDay = date),
-          child: Container(
-            margin: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-                              color: _selectedDay == date ? Constants.primaryBlue.withOpacity(0.1) : Constants.pureWhite,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _selectedDay == date ? Constants.primaryBlue : Constants.secondaryGrey.withOpacity(0.3),
-                  width: 2,
-                ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$day',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: _selectedDay == date ? Colors.blue : Constants.darkBlueGrey,
-                  ),
-                ),
-                if (data?['outfitId'] != null)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.all(2),
+            return SizedBox(
+              height: 60, // Giảm chiều cao để tránh overflow
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: clothingItems.length,
+                itemBuilder: (context, index) {
+                  final item = clothingItems[index].data() as Map<String, dynamic>;
+                  final base64 = item['base64Image'] ?? '';
+                  return Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    width: 50, // Giảm kích thước
+                    height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.lightGray,
                     ),
-                    child: const Icon(
-                      Icons.checkroom,
-                      size: 12,
-                      color: Constants.pureWhite,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: base64.isNotEmpty && base64.startsWith('data:image')
+                          ? Image.memory(
+                              base64Decode(base64.split(',').last),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.error, size: 20),
+                            )
+                          : const Icon(Icons.image_not_supported,
+                              color: AppColors.darkgrey, size: 20),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+Widget _buildOutfitDisplay() {
+  final DateTime selectedDay = _selectedDay ?? DateTime.now();
+
+  final dateKey = DateFormat('yyyy-MM-dd').format(selectedDay);
+  final calendarEntry = _calendarData[dateKey];
+  final outfitId = calendarEntry?['outfitId'];
+
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 0),
+    child: Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.09), // Responsive padding
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color.fromARGB(255, 108, 160, 232),
+            const Color.fromARGB(255, 176, 236, 253),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((0.15 * 255).round()),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          // Ngày tháng năm
+          Text(
+            'Ngày : ${DateFormat('dd/MM/yyyy').format(selectedDay)}',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontSize: MediaQuery.of(context).size.width * 0.035,
+            ),
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 20),
+          // Outfit images
+          SizedBox(
+            height: 70,
+            child: outfitId == null
+                ? Center(
+                    child: Text(
+                      'Chưa có trang phục cho ngày này',
+                      style: TextStyle(
+                        color: Colors.white.withAlpha((0.8 * 255).round()),
+                        fontSize: MediaQuery.of(context).size.width * 0.035,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : _buildOutfitImages(outfitId),
+          ),
+          const SizedBox(height: 22),
+          // Buttons
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _showSelectOutfitDialog(dateKey),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimaryBlue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: MediaQuery.of(context).size.height * 0.015,
+                        ),
+                        elevation: 0,
+                      ),
+                      child: FittedBox(
+                        child: Text(
+                          "Đổi đồ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: MediaQuery.of(context).size.width * 0.035,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final docRef = FirebaseFirestore.instance
+                            .collection('calendar_outfits')
+                            .doc(dateKey);
+                        await docRef.delete();
+                        await loadCalendarDataFromFirestore();
+                        setState(() {
+                          _selectedDay = null;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFFE74C3C),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: MediaQuery.of(context).size.height * 0.015,
+                        ),
+                        elevation: 0,
+                      ),
+                      child: FittedBox(
+                        child: Text(
+                          "Xóa",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: MediaQuery.of(context).size.width * 0.035,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-        ),
-      );
-    }
+        ],
+      ),
+    ),
+  );
+}
 
-    while (cells.length < 42) {
-      cells.add(Container());
-    }
-
-    return cells;
-  }
 
   Widget _buildOutfitCard(Map<String, dynamic> outfit, int index) {
     return FutureBuilder<QuerySnapshot>(
@@ -240,38 +387,31 @@ class _CalendarPageState extends State<CalendarPage> {
             final dateKey = DateFormat('yyyy-MM-dd').format(_selectedDay!);
             final uid = FirebaseAuth.instance.currentUser?.uid;
 
-            await FirebaseFirestore.instance
-                .collection('calendar_outfits')
-                .doc(dateKey)
-                .set({
+            final docRef = FirebaseFirestore.instance.collection('calendar_outfits').doc(dateKey);
+
+            await docRef.set({
               'outfitId': outfit['id'],
               'uid': uid,
               'date': dateKey,
             });
-
+            
             Navigator.pop(context);
             await loadCalendarDataFromFirestore();
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: Constants.pureWhite,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Constants.secondaryGrey.withOpacity(0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Constants.darkBlueGrey.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(color: AppColors.darkgrey.withAlpha((0.2 * 255).round())),
+
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
@@ -279,59 +419,56 @@ class _CalendarPageState extends State<CalendarPage> {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Constants.darkBlueGrey,
+                            color: AppColors.black,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: AppColors.primaryBlue.withAlpha((0.1 * 255).round()),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
-                          'Select',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        
                       ),
                     ],
                   ),
                 ),
-                SizedBox(
-                  height: 120,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: clothingItems.length,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemBuilder: (context, i) {
-                      final item = clothingItems[i].data() as Map<String, dynamic>;
-                      final base64 = item['base64Image'] ?? '';
-                      return Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        width: 80,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: Constants.secondaryGrey.withOpacity(0.1),
-                          border: Border.all(color: Constants.secondaryGrey.withOpacity(0.3)),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: base64.startsWith('data:image')
-                              ? Image.memory(
-                                  base64Decode(base64.split(',').last),
-                                  fit: BoxFit.cover,
-                                )
-                              : const Icon(Icons.image_not_supported),
-                        ),
-                      );
-                    },
+                if (clothingItems.isNotEmpty)
+                  SizedBox(
+                    height: 70, // Giảm chiều cao
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: clothingItems.length,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemBuilder: (context, i) {
+                        final item = clothingItems[i].data() as Map<String, dynamic>;
+                        final base64 = item['base64Image'] ?? '';
+                        return Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          width: 50, // Giảm kích thước
+                          height: 50,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: AppColors.lightGray,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: base64.startsWith('data:image')
+                                ? Image.memory(
+                                    base64Decode(base64.split(',').last),
+                                    fit: BoxFit.cover,
+                                  )
+                                : const Icon(Icons.image_not_supported, size: 20),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -340,400 +477,438 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  Widget _buildHorizontal7Days() {
-    final today = DateTime.now();
-    return Column(
-      children: [
-        // Weather forecast
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Weather Forecast',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Constants.darkBlueGrey,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 120,
-                child: WeeklyPlanner(lat: 21.0285, lon: 105.8542),
-              ),
-            ],
-          ),
-        ),
-        // Daily calendar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Daily Calendar',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Constants.darkBlueGrey,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 100,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 7,
-                  itemBuilder: (context, index) {
-                    final date = today.add(Duration(days: index));
-                    final key = DateFormat('yyyy-MM-dd').format(date);
-                    final data = _calendarData[key];
-                    final isSelected = _selectedDay != null &&
-                        date.year == _selectedDay!.year &&
-                        date.month == _selectedDay!.month &&
-                        date.day == _selectedDay!.day;
+  List<Widget> _buildDayCells() {
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final lastDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
+    final daysInMonth = lastDayOfMonth.day;
+    final firstWeekday = (firstDayOfMonth.weekday % 7);
+    List<Widget> cells = [];
 
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedDay = date),
-                      child: Container(
-                        width: 80,
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.blue.withOpacity(0.1) : Constants.pureWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected ? Colors.blue : Constants.secondaryGrey.withOpacity(0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              DateFormat.E('vi').format(date),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.blue : Constants.darkBlueGrey,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              date.day.toString(),
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: isSelected ? Colors.blue : Constants.darkBlueGrey,
-                              ),
-                            ),
-                            if (data?['outfitId'] != null)
-                              Container(
-                                margin: const EdgeInsets.only(top: 4),
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Icon(
-                                  Icons.checkroom,
-                                  color: Constants.pureWhite,
-                                  size: 12,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+    for (int i = 0; i < firstWeekday; i++) {
+      cells.add(Container());
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    final daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    
-    return Scaffold(
-      backgroundColor: Constants.secondaryGrey.withOpacity(0.1),
-      appBar: AppBar(
-        backgroundColor: Constants.pureWhite,
-        elevation: 0,
-        title: const Text(
-          'Fashion Calendar',
-          style: TextStyle(
-            color: Constants.darkBlueGrey,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: ElevatedButton(
-              onPressed: () => setState(() {
-                _isMonthlyView = !_isMonthlyView;
-                _selectedDay = null;
-              }),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Constants.pureWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _isMonthlyView ? Icons.view_week : Icons.calendar_month,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _isMonthlyView ? 'Week' : 'Month',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ],
+    for (int day = 1; day <= daysInMonth; day++) {
+      final date = DateTime(_focusedDay.year, _focusedDay.month, day);
+      final key = DateFormat('yyyy-MM-dd').format(date);
+      final data = _calendarData[key];
+      final isToday = date.day == DateTime.now().day &&
+          date.month == DateTime.now().month &&
+          date.year == DateTime.now().year;
+
+      cells.add(
+        GestureDetector(
+          onTap: () => setState(() => _selectedDay = date),
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: isToday
+                  ? AppColors.black
+                  : _selectedDay == date
+                      ? AppColors.primaryBlue.withAlpha((0.1 * 255).round())
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(
+                color: _selectedDay == date
+                    ? AppColors.primaryBlue
+                    : Colors.transparent,
+                width: 2,
               ),
             ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      fontWeight:  FontWeight.bold,
+                      color: isToday ? Colors.white : AppColors.black,
+                      fontSize: 14, // Giảm font size
+                      fontFamily: 'Montserrat'
+                    ),
+                  ),
+                ),
+                if (data?['outfitId'] != null)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    width: 4, // Giảm kích thước
+                    height: 4,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryBlue,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ],
+        ),
+      );
+    }
+
+    while (cells.length < 42) {
+      cells.add(Container());
+    }
+
+    return cells;
+  }
+
+Widget _buildHorizontalWeekView() {
+  final today = DateTime.now();
+  final screenWidth = MediaQuery.of(context).size.width;
+
+  return Column(
+    children: [ Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primaryBlue, Color(0xFFCACACA)],
+        ),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.only(top: 16, left: 8, right: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 255, 255, 255)),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Text(
+                    'Thời tiết tuần này',
+                    style: TextStyle(
+                      color: const Color.fromARGB(255, 255, 255, 255),
+                      fontWeight: FontWeight.bold,
+                      fontSize: MediaQuery.of(context).size.width * 0.045,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.calendar_month, color: Color.fromARGB(255, 255, 255, 255)),
+                  onPressed: () => setState(() {
+                    _isMonthlyView = !_isMonthlyView;
+                    _selectedDay = null;
+                  }),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 50),
+          // Weather section (white alpha background)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha((0.1 * 255).round()),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: WeeklyPlanner(lat: 21.0285, lon: 105.8542),
+          ),
+        const SizedBox(height: 20),
+        ])), const SizedBox(height: 20),
+          // Daily calendar section with horizontal scroll
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.only(top: 20, bottom: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha((0.05 * 255).round()),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    'Hàng ngày',
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.04,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Horizontal Scrollable Day List
+                SizedBox(
+                  height: 90,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: 7,
+                    itemBuilder: (context, index) {
+                      final date = today.add(Duration(days: index));
+                      final key = DateFormat('yyyy-MM-dd').format(date);
+                      final data = _calendarData[key];
+                      final isSelected = _selectedDay != null &&
+                          _selectedDay!.day == date.day &&
+                          _selectedDay!.month == date.month &&
+                          _selectedDay!.year == date.year;
+
+                      final weekdays = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
+                      final dayName = weekdays[date.weekday - 1];
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedDay = date;
+                          });
+                        },
+                        child: Container(
+                          width: 70,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primaryBlue : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                dayName,
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.028,
+                                  color: isSelected ? Colors.white : AppColors.darkgrey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                date.day.toString(),
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.045,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? Colors.white : AppColors.black,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              if (data?['outfitId'] != null)
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? Colors.white : kPrimaryBlue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.checkroom,
+                                    size: 10,
+                                    color: isSelected ? kPrimaryBlue : Colors.white,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          )
+        ]
+      );
+        
+    
+  
+}
+
+ @override
+  Widget build(BuildContext context) {
+    final daysOfWeek = [ 'CN','Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7'];
+    
+    return Scaffold(
+      backgroundColor: AppColors.lightGray,
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
               ),
             )
           : Column(
               children: [
-                if (_isMonthlyView) ...[
-                  Container(
-                    color: Constants.pureWhite,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left, color: Constants.darkBlueGrey),
-                          onPressed: () => setState(() {
-                            _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
-                            _selectedDay = null;
-                          }),
-                        ),
-                        Text(
-                          DateFormat('MMMM yyyy', 'vi').format(_focusedDay),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Constants.darkBlueGrey,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right, color: Constants.darkBlueGrey),
-                          onPressed: () => setState(() {
-                            _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
-                            _selectedDay = null;
-                          }),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    color: Constants.pureWhite,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: daysOfWeek
-                          .map((d) => Expanded(
-                                child: Center(
-                                  child: Text(
-                                    d,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Constants.darkBlueGrey,
-                                    ),
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      color: Constants.pureWhite,
-                      child: GridView.count(
-                        crossAxisCount: 7,
-                        padding: const EdgeInsets.all(8),
-                        children: _buildDayCells(),
+                if (_isMonthlyView) Padding(
+                  padding: const EdgeInsets.only(top: 16, left: 8, right: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: AppColors.black),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                    ),
-                  ),
-                ] else ...[
-                  Expanded(child: _buildHorizontal7Days()),
-                ],
-                if (_selectedDay != null)
-                  Container(
-                    width: double.infinity,
-                    color: Constants.pureWhite,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Selected: ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
-                          style: const TextStyle(
-                            fontSize: 16,
+                      Expanded(
+                        child: Text(
+                          'Thời tiết tuần này',
+                          style: TextStyle(
+                            color: AppColors.black,
                             fontWeight: FontWeight.bold,
-                            color: Constants.darkBlueGrey,
+                            fontSize: MediaQuery.of(context).size.width * 0.045,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 12),
-                        FutureBuilder<DocumentSnapshot>(
-                          future: FirebaseFirestore.instance
-                              .collection('calendar_outfits')
-                              .doc(DateFormat('yyyy-MM-dd').format(_selectedDay!))
-                              .get(),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return const CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                              );
-                            }
-                            
-                            final data = snapshot.data!.data() as Map<String, dynamic>?;
-                            if (data == null) {
-                              return ElevatedButton(
-                                onPressed: () => _showSelectOutfitDialog(
-                                  DateFormat('yyyy-MM-dd').format(_selectedDay!),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  foregroundColor: Constants.pureWhite,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                child: const Text("Add Outfit"),
-                              );
-                            }
-                            final outfitId = data['outfitId'] as String?;
-                            if (outfitId == null) return const SizedBox();
-
-                            return FutureBuilder<List<Map<String, dynamic>>>(
-                              future: fetchOutfitItems(outfitId),
-                              builder: (context, snapshot) {
-                                if (!snapshot.hasData) {
-                                  return const Center(child: CircularProgressIndicator());
-                                }
-
-                                final items = snapshot.data!;
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Outfit Items:",
-                                      style: TextStyle(
-                                        color: Constants.secondaryGrey.withOpacity(0.6),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    SizedBox(
-                                      height: 100,
-                                      child: ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: items.length,
-                                        itemBuilder: (context, index) {
-                                          final item = items[index];
-                                          final base64Image = item['base64Image'] ?? '';
-
-                                          return Container(
-                                            margin: const EdgeInsets.only(right: 12),
-                                            width: 80,
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(12),
-                                              color: Constants.secondaryGrey.withOpacity(0.1),
-                                              border: Border.all(color: Constants.secondaryGrey.withOpacity(0.3)),
-                                            ),
-                                            child: base64Image.startsWith('data:image')
-                                                ? Image.memory(
-                                                    base64Decode(base64Image.split(',').last),
-                                                    fit: BoxFit.cover,
-                                                  )
-                                                : const Icon(Icons.image_not_supported),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        ElevatedButton(
-                                          onPressed: () => _showSelectOutfitDialog(
-                                            DateFormat('yyyy-MM-dd').format(_selectedDay!),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue,
-                                            foregroundColor: Constants.pureWhite,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 10,
-                                            ),
-                                          ),
-                                          child: const Text("Change"),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        OutlinedButton(
-                                          onPressed: () async {
-                                            await FirebaseFirestore.instance
-                                                .collection('calendar_outfits')
-                                                .doc(DateFormat('yyyy-MM-dd').format(_selectedDay!))
-                                                .delete();
-                                            await loadCalendarDataFromFirestore();
-                                          },
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: Colors.red,
-                                            side: const BorderSide(color: Colors.red),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 10,
-                                            ),
-                                          ),
-                                          child: const Text("Remove"),
-                                        ),
-                                      ],
-                                    ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.calendar_month, color: Color.fromARGB(255, 0, 0, 0)),
+                        onPressed: () => setState(() {
+                          _isMonthlyView = !_isMonthlyView;
+                          _selectedDay = null;
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        if (_isMonthlyView) ...[
+                          Container(
+                            margin: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    kPrimaryBlue,
+                                    
+                                    const Color.fromARGB(255, 148, 185, 237),
+                                    const Color.fromARGB(255, 180, 214, 231),
+                                    const Color.fromARGB(255, 148, 185, 237),
+                                    const Color.fromARGB(255, 220, 227, 234),
                                   ],
-                                );
-                              },
-                            );
-                          },
-                        ),
+                                  //stops: [0.1,0.3,0.2,0.1,0.3]
+                                ),
+                                border: Border.all(
+                                  color: const Color.fromARGB(255, 77, 142, 195), // Màu viền
+                                  width: 2, // Độ dày viền
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha((0.05 * 255).round()),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  )
+                                ]),
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 12),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.chevron_left,
+                                            color: AppColors.black),
+                                        onPressed: () => setState(() {
+                                          _focusedDay = DateTime(
+                                              _focusedDay.year,
+                                              _focusedDay.month - 1,
+                                              1);
+                                          _selectedDay = null;
+                                        }),
+                                      ),
+                                      Flexible(
+                                        child: Text(
+                                          DateFormat('MMMM yyyy')
+                                              .format(_focusedDay),
+                                          style: TextStyle(
+                                            fontSize: MediaQuery.of(context).size.width * 0.045,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.black,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.chevron_right,
+                                            color: AppColors.black),
+                                        onPressed: () => setState(() {
+                                          _focusedDay = DateTime(
+                                              _focusedDay.year,
+                                              _focusedDay.month + 1,
+                                              1);
+                                          _selectedDay = null;
+                                        }),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8, horizontal: 16),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: daysOfWeek
+                                        .map((d) => Expanded(
+                                              child: Center(
+                                                child: Text(
+                                                  d,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize: MediaQuery.of(context).size.width * 0.03,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ))
+                                        .toList(),
+                                  ),
+                                ),
+                                // Sử dụng AspectRatio để đảm bảo tỷ lệ phù hợp
+                                AspectRatio(
+                                  aspectRatio: 7/6, // 7 columns, 6 rows
+                                  child: GridView.count(
+                                    crossAxisCount: 7,
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.all(8),
+                                    children: _buildDayCells(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          _buildHorizontalWeekView(),
+                        ],
                       ],
                     ),
                   ),
+                ),
+                // Đặt _buildOutfitDisplay bên ngoài Expanded và SingleChildScrollView
+                _buildOutfitDisplay(),
               ],
             ),
     );
   }
 }
-// Weather forecast widget
 class WeeklyPlanner extends StatefulWidget {
   final double lat;
   final double lon;
@@ -774,90 +949,82 @@ class _WeeklyPlannerState extends State<WeeklyPlanner> {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
         ),
       );
     }
-    if (_error != null) {
-      return Center(
+    if (_error != null || forecast == null || forecast!.isEmpty) {
+      return const Center(
         child: Text(
           'Weather unavailable',
-          style: TextStyle(color: Constants.secondaryGrey.withOpacity(0.6)),
-        ),
-      );
-    }
-    if (forecast == null || forecast!.isEmpty) {
-      return Center(
-        child: Text(
-          'No weather data',
-          style: TextStyle(color: Constants.secondaryGrey.withOpacity(0.6)),
+          style: TextStyle(color: Colors.white),
         ),
       );
     }
     return buildWeeklyWeatherCard(forecast!);
   }
+Widget buildWeeklyWeatherCard(List<Map<String, dynamic>> dailyForecasts) {
+  final days = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
 
-  Widget buildWeeklyWeatherCard(List<Map<String, dynamic>> dailyForecasts) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: dailyForecasts.map((forecast) {
-          final date = DateTime.parse(forecast['dt_txt']);
-          final day = DateFormat.E('vi').format(date);
-          final tempMax = (forecast['main']['temp_max'] as num).round();
-          final tempMin = (forecast['main']['temp_min'] as num).round();
-          final weatherIcon = forecast['weather'][0]['icon'];
-          
-          return Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Constants.pureWhite,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Constants.secondaryGrey.withOpacity(0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Constants.darkBlueGrey.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: List.generate(7, (index) {
+      // Nếu index vượt quá độ dài danh sách → bỏ qua
+      if (index >= dailyForecasts.length) {
+        return const SizedBox(width: 40); // placeholder rỗng
+      }
+
+      final forecast = dailyForecasts[index];
+
+      // Kiểm tra dữ liệu hợp lệ
+      if (forecast['main'] == null ||
+          forecast['main']['temp'] == null ||
+          forecast['weather'] == null ||
+          forecast['weather'].isEmpty ||
+          forecast['weather'][0]['icon'] == null) {
+        return const SizedBox(width: 40); // placeholder rỗng
+      }
+
+      final temp = (forecast['main']['temp'] as num).round();
+      final weatherIcon = forecast['weather'][0]['icon'];
+
+      return SizedBox(
+        width: 40,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              days[index],
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.white,
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  day,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Constants.darkBlueGrey,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Image.network(
-                  'https://openweathermap.org/img/wn/$weatherIcon.png',
-                  width: 32,
-                  height: 32,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.cloud,
-                    size: 32,
-                    color: Constants.secondaryGrey,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$tempMax°/$tempMin°',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Constants.darkBlueGrey,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 8),
+            Image.network(
+              'https://openweathermap.org/img/wn/$weatherIcon.png',
+              width: 32,
+              height: 32,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.cloud,
+                size: 32,
+                color: Color.fromARGB(255, 255, 0, 0),
+              ),
             ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+            const SizedBox(height: 4),
+            Text(
+              '$temp°',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }),
+  );
+}
+
 }

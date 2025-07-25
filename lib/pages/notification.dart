@@ -135,12 +135,6 @@ class _NotificationPanelState extends State<NotificationPanel> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.network(
-                        'https://storage.googleapis.com/a1aa/image/7324999a-736b-4f54-1d00-3416d79d600c.jpg',
-                        height: 120,
-                        width: 120,
-                      ),
-                      const SizedBox(height: 20),
                       Text(
                         'Chưa có thông báo',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
@@ -151,14 +145,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
                         style: TextStyle(color: Constants.secondaryGrey.withOpacity(0.6), fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'Xem lịch sử thông báo',
-                          style: TextStyle(color: Colors.blue),
-                        ),
-                      ),
+                      const SizedBox(height: 12),                    
                     ],
                   );
                 }
