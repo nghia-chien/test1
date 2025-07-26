@@ -599,7 +599,7 @@ Widget _buildHorizontalWeekView() {
                 ),
                 Expanded(
                   child: Text(
-                    'Thời tiết tuần này',
+                    'Thời tiết 5 ngày tới',
                     style: TextStyle(
                       color: const Color.fromARGB(255, 255, 255, 255),
                       fontWeight: FontWeight.bold,

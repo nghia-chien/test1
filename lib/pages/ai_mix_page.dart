@@ -121,7 +121,7 @@ class _AiMixPageState extends State<AiMixPage> {
                   item.season.toLowerCase().contains(keyword) ||
                   item.category.toLowerCase().contains(keyword) ||
                   item.occasions.any((o) => o.toLowerCase().contains(keyword))) &&
-               (_seasonFilter == null || _seasonFilter == 'Tất Cả' || item.season == _seasonFilter) &&
+               (_seasonFilter == null || _seasonFilter == 'Tất Cả' || item.season == _seasonFilter || item.season == 'Tất Cả') &&
                (_occasionFilter == null || _occasionFilter == '' || item.occasions.contains(_occasionFilter!));
       }).toList();
 
@@ -459,7 +459,8 @@ Widget build(BuildContext context) {
                     _buildDropdown(
                       label: 'Mùa',
                       value: _seasonFilter,
-                      items: ['Tất Cả', 'Xuân', 'Hè', 'Thu', 'Đông'],
+                      items: ['', 'Xuân', 'Hè', 'Thu', 'Đông'],
+                      labelBuilder: (s) => s.isEmpty ? 'Tất cả' : s,
                       onChanged: (v) => setState(() => _seasonFilter = v),
                     ),
                     const SizedBox(width: 12),

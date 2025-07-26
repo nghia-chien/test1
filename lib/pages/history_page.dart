@@ -236,7 +236,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
       case 'all':
         return 'Tất cả';
       case 'upload':
-        return 'Đăng bài';
+        return 'Thêm đồ';
       case 'delete':
         return 'Xóa bài';
       case 'like':

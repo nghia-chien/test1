@@ -774,31 +774,46 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                       const SizedBox(height: 20),
                       
                       if (_base64Image != null)
-                        Stack(
-                          children: [
-                            Container(
-                              height: 200,
-                              width: double.infinity,
-                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: Image.memory(base64Decode(_base64Image!.split(',').last), fit: BoxFit.cover),
-                              ),
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                                child: IconButton(
-                                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                                  onPressed: () => setModalState(() => _base64Image = null),
+                       Stack(
+                        children: [
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              // Giới hạn chiều rộng tối đa là chiều rộng màn hình
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: constraints.maxWidth,
+                                  maxHeight: MediaQuery.of(context).size.height * 0.6, // giới hạn chiều cao ảnh
                                 ),
+                                child: Container(
+                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.memory(
+                                      base64Decode(_base64Image!.split(',').last),
+                                      fit: BoxFit.contain, // giữ nguyên tỉ lệ ảnh, không cắt
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                                onPressed: () => setModalState(() => _base64Image = null),
                               ),
                             ),
-                          ],
-                        ),
-                      
+                          ),
+                        ],
+                      ),
+
                       const Spacer(),
                       
                       Row(

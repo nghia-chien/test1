@@ -257,11 +257,13 @@ void _showNotifications() {
                     const SizedBox(height: 12),
                     _buildSearchBox(),
                     const SizedBox(height: 20),
+                    buildWeatherCard(),
+                    const SizedBox(height: 20),
                     _buildRecentOutfitsTitle(),
                     const SizedBox(height: 12),
                     _buildRecentOutfits(),
-                    const SizedBox(height: 25),
-                    buildWeatherCard(),
+                    
+                    
                   ],
                 ),
               ),

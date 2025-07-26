@@ -247,31 +247,26 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
                     children: [
                       Container(
                         width: 140, height: 140,
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            colors: [darkBlue.withOpacity(0.4), Colors.transparent],
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Icons.checkroom_outlined, size: 80, color: primaryBlue.withOpacity(0.7)),
+                        
+                        child: Icon(Icons.checkroom_outlined, size: 80, color: const Color.fromARGB(255, 194, 194, 194).withAlpha((255 * 0.7).round())),
                       ),
                       const SizedBox(height: 32),
                       Text(
                         'Tủ đồ trống',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: darkBlue),
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 194, 194, 194).withAlpha((255 * 0.7).round())),
                       ),
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                         decoration: BoxDecoration(
-                          color: primaryBlue,
+                          color: Colors.grey[50],
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: darkgrey.withOpacity(0.3)),
+                          //border: Border.all(color: Colors.grey),
                         ),
                         child: Text(
                           'Hãy thêm món đồ đầu tiên vào tủ đồ của bạn',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 16, color: darkBlue, fontWeight: FontWeight.w500),
+                          style: TextStyle(fontSize: 16, color: const Color.fromARGB(255, 194, 194, 194).withAlpha((255 * 0.7).round()), fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
@@ -421,13 +416,8 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
                 Container(
                   width: 120,
                   height: 120,
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      colors: [darkBlue.withOpacity(0.4), Colors.transparent],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.style_outlined, size: 60, color: primaryBlue),
+                  
+                  child: Icon(Icons.style_outlined, size: 60, color: const Color.fromARGB(255, 194, 194, 194).withAlpha((255 * 0.7).round())),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -435,7 +425,7 @@ class _ClosetPageState extends State<ClosetPage> with TickerProviderStateMixin {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: darkBlue,
+                    color: const Color.fromARGB(255, 194, 194, 194).withAlpha((255 * 0.7).round()),
                   ),
                 ),
               ],
@@ -800,30 +790,6 @@ class _ClothingItemCardState extends State<_ClothingItemCard> with SingleTickerP
                       ),
                     ),
                   ),
-                  // Expanded(
-                  //   flex: 2,
-                  //   child: Center(
-                  //     //padding: const EdgeInsets.all(16),
-                  //     child: Column( //tên item
-                  //       crossAxisAlignment: CrossAxisAlignment.start,
-                  //       mainAxisAlignment: MainAxisAlignment.center,
-                  //       children: [
-                  //         Text(
-                  //           widget.item.name,
-                  //           style: TextStyle(
-                  //             fontWeight: FontWeight.bold,
-                  //             fontSize: 14,
-                  //             color: const Color.fromARGB(255, 70, 70, 70),
-                  //             //height: 1.2,
-                  //           ),
-                  //           //maxLines: 2,
-                  //           overflow: TextOverflow.ellipsis,
-                  //         ),
-                          
-                  //       ],
-                  //     ),
-                  //   ),
-                  // ),
                 ],
               ),
             ),
