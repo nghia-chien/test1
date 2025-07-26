@@ -1,24 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
-  <meta name="facebook-app-id" content="YOUR_FACEBOOK_APP_ID">
+  <meta name="facebook-app-id" content="10002407466552119">
   <meta name="facebook-login-method" content="popup">
-  <meta name="facebook-login-protocol-scheme" content="fbYOUR_FACEBOOK_APP_ID">
+  <meta name="facebook-login-protocol-scheme" content="fb10002407466552119">
 
   <meta name="google-signin-client_id" content="994582313928-cv0puj0iaic2fl0uh4bgf9nhruf8vjej.apps.googleusercontent.com" />
   <meta charset="UTF-8">
@@ -38,6 +25,30 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+
+  <!-- 🔥 Facebook SDK Init -->
+  <div id="fb-root"></div>
+  <script>
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId: '10002407466552119',
+        cookie: true,
+        xfbml: true,
+        version: 'v19.0'
+      });
+      console.log("✅ Facebook SDK initialized");
+    };
+
+    (function (d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+  </script>
+  <!-- 🔥 END Facebook SDK -->
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

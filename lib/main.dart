@@ -3,8 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'
-    show GlobalMaterialLocalizations, GlobalWidgetsLocalizations, GlobalCupertinoLocalizations;
 
 
 import 'firebase_options.dart';
@@ -71,8 +69,7 @@ class AuthGate extends StatelessWidget {
               }
               if (infoSnapshot.data == true) {
                 return MainScreen(
-                  isDarkMode: false,
-                  onThemeChanged: (bool value) {},
+                 
                 );
               } else {
                 return const QuestionPage();
@@ -83,6 +80,25 @@ class AuthGate extends StatelessWidget {
 
         return const LoginPage();
       },
+    );
+  }
+}
+
+const Color kPrimaryBlue = Color(0xFF2196F3);
+
+class AppLoading extends StatelessWidget {
+  const AppLoading({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(kPrimaryBlue),
+        ),
+      ),
     );
   }
 }

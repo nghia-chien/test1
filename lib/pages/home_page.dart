@@ -1,6 +1,22 @@
+import 'package:cursor/main.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/testing.dart';
+import '../services/location_service.dart';
+import '../services/weather_service.dart';
+import 'chat_screen.dart';
+import 'notification.dart';
+import 'uploadimage_page.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'calendar_page.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
+import '../utils/responsive_helper.dart';
+import '../constants/constants.dart';
+import 'history_page.dart';
+import 'CreateOutfitPage.dart';
+import 'dart:typed_data';
+import 'profile_page2.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,216 +26,627 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
-  String? _userName;  
+  String? weatherDescription;
+  double? temperature;
+  String? weatherIconCode;
+  String? cityName;
+  String? countryCode;
+  String? _userName;
+  final TextEditingController _searchController = TextEditingController();
+
+  static const Color primaryBlue = Color(0xFF209CFF);
+  static const Color secondaryGrey = Color(0xFF7D7F85);
+  static const Color darkgrey = Color(0xFF231f20);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color errorRed = Color(0xFFD32F2F);
+  static const Color darkBlue = Color(0xFF006cff);
+  static const Color black =Color(0xFF000000);
+
+  List<AnimatedText> _generateAnimatedTexts() {
+    final name = _userName ?? 'bạn';
+    List<String> messages = [
+      'Chào bạn quay trở lại, $name ',
+      'Bạn muốn tư vấn điều gì?',
+      'Hãy nhập điều bạn muốn!',
+    ];
+    if (weatherDescription != null && temperature != null) {
+      if (temperature! >= 28) {
+        messages.insert(1, 'Hôm nay trời nóng, bạn có muốn mặc bộ đồ mát mẻ?');
+      } else if (temperature! <= 20) {
+        messages.insert(1, 'Có vẻ trời đang lạnh, bạn có muốn chọn bộ đồ ấm áp?');
+      }
+    }
+    return messages
+        .map((msg) => TypewriterAnimatedText(msg, speed: const Duration(milliseconds: 60)))
+        .toList();
+  }
 
   @override
   void initState() {
     super.initState();
     _loadUserName();
+    fetchWeatherData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserName() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      if (doc.exists) {
+      setState(() {
+        _userName = doc.data()?['name'] ?? 'Guest';
+      });
+    } else {
+      setState(() {
+        _userName = 'Guest';
+      });
+    }
+  }
+
+  Future<void> fetchWeatherData() async {
+    try {
+      final position = await LocationService.getCurrentPosition();
+      if (position != null) {
+        final weather = await WeatherService.fetchWeather(position.latitude, position.longitude);
         setState(() {
-          _userName = doc.data()?['name'] ?? 'Guest';
-        });
-      } else {
-        setState(() {
-          _userName = 'Guest';
+          weatherDescription = weather['weather'][0]['description'];
+          temperature = weather['main']['temp'];
+          weatherIconCode = weather['weather'][0]['icon'];
+          cityName = weather['name'];
+          countryCode = weather['sys']?['country'];
         });
       }
+    } catch (e) {
+      debugPrint('Lỗi lấy thời tiết: $e');
     }
+  }
+
+void _showNotifications() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Notifications",
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const SizedBox.shrink(); // Nội dung thực sự nằm trong transitionBuilder
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedValue = Curves.easeInOut.transform(animation.value);
+        return Transform.translate(
+          offset: Offset(0, -300 + (300 * curvedValue)), // Trượt từ trên xuống
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Material(
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(24),
+              ),
+              color: Colors.white,
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                height: 400, // Tùy chỉnh chiều cao panel
+                child: const NotificationPanel(),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE7ECEF),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-            padding: const EdgeInsets.fromLTRB(24.0, 16.0, 16.0, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+    final isWideScreen = ResponsiveHelper.isDesktop(context) || ResponsiveHelper.isTablet(context);
+        return Scaffold(
+        appBar: isWideScreen
+        ? null
+        :  AppBar(
+            backgroundColor: primaryBlue,
+            elevation: 0,
+            automaticallyImplyLeading: false,
+            toolbarHeight: 80,
+            titleSpacing: 8, // Đổi số này để chỉnh khoảng cách lề trái
+            title: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Greeting on the left
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Hi, ${_userName ?? 'Loading...'} 👋",
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                // Icons on the right
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none, size: 28),
-                      onPressed: () {},
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Image.asset(
+                        'images/logo2.png',
+                        width: 120,
+                        height: 60,
+                        fit: BoxFit.contain,
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.person_outline, size: 28),
-                      onPressed: () {},
-                    ),
-                  ],
-                )
-              ],
-            ),
-          )
-          ,
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _actionButton(Icons.file_upload, "Upload"),
-                  _actionButton(Icons.checkroom, "Create"),
-                  _actionButton(Icons.calendar_today, "Plan"),
-                  _actionButton(Icons.bar_chart, "Review"),
-                  _actionButton(Icons.history, "History"),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFFA3C7E6),
-                    radius: 20,
-                    child: Image.network(
-                      'https://storage.googleapis.com/a1aa/image/e1813bb2-c35b-444d-183b-06a6e0a3d4b6.jpg',
-                      width: 24,
-                      height: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7941D),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text("Hỏi gì cũng được!", style: TextStyle(color: Colors.white, fontSize: 12)),
-                  ),
-                ],
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(left: 64.0, top: 4),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text("AI Stylish", style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Color(0xFF3A8EDC), width: 2),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Gợi ý phong cách?',
-                            border: InputBorder.none,
-                          ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12.0, top: 0), // chỉnh lề trái dòng slogan
+                      child: const Text(
+                        "With Honor. be You",
+                        style: TextStyle(
+                          fontSize: 11, // chỉnh font size nhỏ
+                          color: Colors.white,
+                          fontFamily: 'BeautiqueDisplay',
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ),
-                    Container(
-                      color: const Color(0xFF3A8EDC),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                        onPressed: () {},
+                  ],
+                ),
+                const Spacer(),
+                Padding(
+                  padding: EdgeInsets.only(top: 12.0), // Đưa icon xuống dưới
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+                        onPressed: _showNotifications,
                       ),
-                    )
+                      IconButton(
+                        icon: const Icon(Icons.person, color: Colors.white, size: 28),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfilePage(key: PageStorageKey('profile')),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF209CFF),
+                Colors.white,
+              ],
+              stops: [0.0, 0.7],
+            ),
+          ),
+          child: Center(
+            child: Container(
+              padding: ResponsiveHelper.getScreenPadding(context),
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.getMaxWidth(context),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Banner
+                    Padding(
+                      padding: const EdgeInsets.only(top: 0, left: 2, right: 2, bottom: 6),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          'images/banner.png',
+                          fit: BoxFit.cover,
+                          width: double.maxFinite,
+                          height: 140,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    buildActionGrid(context),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "AI Stylist",
+                      style: TextStyle(fontFamily: 'BeautiqueDisplay',fontWeight: FontWeight.bold,fontStyle: FontStyle.italic, color: darkgrey, fontSize: 18)
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    _buildSearchBox(),
+                    const SizedBox(height: 20),
+                    buildWeatherCard(),
+                    const SizedBox(height: 20),
+                    _buildRecentOutfitsTitle(),
+                    const SizedBox(height: 12),
+                    _buildRecentOutfits(),
+                    
+                    
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text("Recent Outfits", style: TextStyle(fontWeight: FontWeight.w600)),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 80,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                children: [
-                  _recentOutfitImg('https://storage.googleapis.com/a1aa/image/99891187-057f-40f6-48e3-726c266b71c7.jpg'),
-                  _recentOutfitImg('https://storage.googleapis.com/a1aa/image/a7e61f45-ca02-4b50-d3ac-b305024747e3.jpg'),
-                  _recentOutfitImg('https://storage.googleapis.com/a1aa/image/2b1cb033-039d-46b9-66a2-da15b53a35a4.jpg'),
-                  _recentOutfitImg('https://storage.googleapis.com/a1aa/image/bd7e2998-776c-40ce-04d1-916082f07f7e.jpg'),
-                  _recentOutfitImg('https://storage.googleapis.com/a1aa/image/9dc0b7b2-83af-4b1d-4690-6970febc8c92.jpg'),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: const Color(0xFF3A8EDC),
-        unselectedItemColor: const Color(0xFF7F8C8D),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.sync), label: 'Feed'),
-          BottomNavigationBarItem(icon: Icon(Icons.star), label: 'AI Stylist'),
-          BottomNavigationBarItem(icon: Icon(Icons.checkroom), label: 'Welcome'),
+    );
+  }
+
+  Widget buildActionGrid(BuildContext context) {
+    final actions = [
+      {
+        'icon': Icons.add_photo_alternate,
+        'label': 'Thêm đồ',
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UploadClothingPage()),
+          );
+        }
+      },
+      {
+        'icon': Icons.bubble_chart , 
+        'label': 'Tạo outfit', 
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EditOutfitPage()),
+          );
+      }
+      },
+      {
+        'icon': Icons.calendar_month,
+        'label': 'Kế hoạch',
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CalendarPage()),
+          );
+        }
+      },
+      {
+        'icon': Icons.leaderboard,
+        'label': 'Hoạt động',
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const HistoryPage()),
+          );
+        }
+      },
+    ];
+
+    return Container(
+  padding: const EdgeInsets.all(8),
+  decoration: BoxDecoration(
+    color: Colors.white.withAlpha((255 * 0.9).round()),
+    // border: Border.all(
+    //   color: const Color.fromARGB(255, 134, 134, 134).withAlpha((255 * 0.5).round()), // hoặc bất kỳ màu nào bạn muốn
+    //   width: 1.5,
+    // ),
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: actions.map((item) {
+        return Expanded(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(50),
+            onTap: item['onTap'] as VoidCallback,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  // decoration: BoxDecoration(
+                  //   color: Constants.pureWhite,
+                  //   shape: BoxShape.circle,
+                  //   boxShadow: [BoxShadow(color: Constants.darkBlueGrey.withOpacity(0.1), blurRadius: 4)],
+                  // ),
+                  child: Icon(
+                    item['icon'] as IconData,
+                    size: 26,
+                    color: primaryBlue,
+                  ),
+                ),
+                //const SizedBox(height: 6),
+                Text(
+                  item['label'] as String,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: black,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Montserrat',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    ));
+  }
+
+  Widget _buildSearchBox() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(100),
+        color:  white,//.withAlpha((255 * 0.5).round()),
+        border: Border.all(
+          color: Colors.grey, // hoặc bất kỳ màu nào bạn muốn
+          width: 1.5,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                // Animated hintText khi ô search rỗng
+                if (_searchController.text.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+                    child: DefaultTextStyle(
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF7D7F85),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      child: AnimatedTextKit(
+                        animatedTexts: _generateAnimatedTexts(),
+                        repeatForever: true,
+                        pause: const Duration(milliseconds: 1200),
+                        isRepeatingAnimation: true,
+                        displayFullTextOnTap: true,
+                        stopPauseOnTap: true,
+                      ),
+                    ),
+                  ),
+
+                // TextField hiển thị lên trên
+                TextField(
+                  controller: _searchController,
+                  onChanged: (_) => setState(() {}), // Cập nhật để ẩn hintText khi gõ
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Color(0xFF7D7F85)),
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: primaryBlue,
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              iconSize: 18,
+              icon: const Icon(Icons.arrow_forward, color: Colors.white),
+              onPressed: () {
+                final input = _searchController.text.trim();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatScreen(
+                      weatherDescription: weatherDescription,
+                      temperature: temperature,
+                      initialQuery: input.isNotEmpty ? input : null,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _actionButton(IconData icon, String label) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-          ),
-          child: Icon(icon, color: const Color(0xFF2C3E50), size: 24),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF2C3E50)))
-      ],
-    );
+  Widget _buildRecentOutfitsTitle() {
+    return const Text("Recent Outfits",style: TextStyle(fontFamily: 'BeautiqueDisplay',fontWeight: FontWeight.bold,fontStyle: FontStyle.italic, color: darkgrey, fontSize: 18));
   }
 
-  Widget _recentOutfitImg(String url) {
-    return Container(
-      margin: const EdgeInsets.only(right: 12),
-      width: 80,
-      height: 80,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(url, fit: BoxFit.cover),
+  Widget _buildRecentOutfits() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      return const Text('Vui lòng đăng nhập');
+    }
+
+    double height = ResponsiveHelper.isMobile(context) ? 70 : 100;
+    int imageCount = ResponsiveHelper.isMobile(context) ? 6 : 10;
+
+    return SizedBox(
+      
+      height: height,
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('clothing_items')
+            .where('uid', isEqualTo: uid)
+            .orderBy('uploaded_at', descending: true)
+            .limit(imageCount)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          }
+
+          final items = snapshot.data!.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data['base64Image'] ?? data['imageUrl'] ?? '';
+          }).where((url) => url.isNotEmpty).toList();
+
+          return ListView.builder(
+            
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return _recentOutfitImg(items[index], height);
+            },
+          );
+        },
       ),
     );
   }
+
+
+Widget _recentOutfitImg(String url, double size) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      width: size,
+      height: size,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Builder(
+          builder: (context) {
+            if (url.startsWith('data:image')) {
+              try {
+                final uriData = Uri.parse(url).data;
+                if (uriData == null) return const Icon(Icons.broken_image);
+                final bytes = uriData.contentAsBytes();
+                return Image.memory(bytes, fit: BoxFit.cover);
+              } catch (e) {
+                return const Icon(Icons.broken_image);
+              }
+            } else {
+              return CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget buildWeatherCard() {
+    if (weatherDescription == null || temperature == null || weatherIconCode == null) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: primaryBlue,
+          boxShadow: const [
+            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 3)),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+        alignment: Alignment.centerLeft,
+        child: const Row(
+          children: [
+            Text('🌤️', style: TextStyle(fontSize: 28, color: Colors.white)),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Đang tải thời tiết...",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final iconUrl = 'https://openweathermap.org/img/wn/$weatherIconCode@4x.png';
+
+    return Container(
+      decoration: BoxDecoration(
+        //border: Border.all(color: secondaryGrey,width: 1),
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.fromARGB(255, 208, 231, 247),
+            Color.fromARGB(255, 74, 167, 239),
+            AppColors.primaryBlue,
+            AppColors.primaryBlue,
+          ],
+          stops: [0.1,0.65, 0.35,0.1],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(2, 3),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  
+                Image.network(
+                iconUrl,
+                width: 60,
+                height: 50,
+                fit: BoxFit.cover,
+              ),
+                  const SizedBox(height: 4),
+                  Text(
+                    weatherDescription!.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+              const SizedBox(width: 10),
+              Text(
+                    '${temperature!.toStringAsFixed(1)}°C',
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '$cityName, $countryCode',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.left,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+
+    );
+}
 }

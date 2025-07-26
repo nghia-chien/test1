@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -23,11 +24,20 @@ class _QuestionPageState extends State<QuestionPage> {
   final List<Map<String, String>> _bodyTypes = [
     {'type': 'Gầy', 'description': 'Dáng người nhỏ, ít cơ'},
     {'type': 'Trung bình', 'description': 'Dáng người cân đối'},
-    {'type': 'Mập', 'description': 'Dáng người to, nhiều mỡ'},
+    {'type': 'Đầy đặn', 'description': 'Dáng người tròn trịa'},
     {'type': 'Cơ bắp', 'description': 'Dáng người có cơ bắp'},
   ];
 
   bool _isLoading = false;
+
+  // Color scheme
+  static const Color primaryBlue = Constants.primaryBlue; // Màu xanh chủ đạo đồng bộ
+  static const Color darkBlue = Constants.primaryBlue; // Màu xanh đậm đồng bộ
+  static const Color lightGray = Color(0xFFF5F5F5); // Very light gray for backgrounds
+  static const Color mediumGray = Color(0xFF9E9E9E); // Medium gray for hints/icons
+  static const Color darkGray = Color(0xFF424242); // Dark gray for secondary text/icons
+  static const Color black = Color(0xFF212121); // Almost black for main text/titles
+  static const Color white = Constants.pureWhite; // Pure white
 
   @override
   void dispose() {
@@ -41,11 +51,28 @@ class _QuestionPageState extends State<QuestionPage> {
       context: context,
       initialDate: now.subtract(const Duration(days: 365 * 20)),
       firstDate: DateTime(1900),
-      lastDate: now.subtract(const Duration(days: 365 * 13)), // Tối thiểu 13 tuổi
+      lastDate: now.subtract(const Duration(days: 365 * 13)), // Minimum 13 years old
       locale: const Locale('vi', 'VN'),
       helpText: 'Chọn ngày sinh',
       cancelText: 'Hủy',
       confirmText: 'Chọn',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: primaryBlue, // Header background color
+              onPrimary: white, // Header text color
+              onSurface: black, // Body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: primaryBlue, // Button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => _birthDate = picked);
@@ -65,7 +92,7 @@ class _QuestionPageState extends State<QuestionPage> {
   int _calculateAge(DateTime birthDate) {
     final now = DateTime.now();
     int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || 
+    if (now.month < birthDate.month ||
         (now.month == birthDate.month && now.day < birthDate.day)) {
       age--;
     }
@@ -93,12 +120,14 @@ class _QuestionPageState extends State<QuestionPage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         if (mounted) {
-          Navigator.pushReplacement(
+          // Changed to pushAndRemoveUntil to clear the stack
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (_) => LoginPage(),
-              settings: RouteSettings(arguments: {'redirectToMain': true}),
+              builder: (_) => const LoginPage(),
+              settings: const RouteSettings(arguments: {'redirectToMain': true}),
             ),
+            (route) => false, // Remove all routes below
           );
         }
         return;
@@ -115,14 +144,13 @@ class _QuestionPageState extends State<QuestionPage> {
       }, SetOptions(merge: true));
 
       if (mounted) {
-        Navigator.pushReplacement(
+        // Changed to pushAndRemoveUntil to clear the stack
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (_) => MainScreen(
-              isDarkMode: false, // hoặc giá trị phù hợp từ cài đặt
-              onThemeChanged: (bool isDark) {},
-            ),
+            builder: (_) => const MainScreen(),
           ),
+          (route) => false, // Remove all routes below
         );
       }
     } catch (e) {
@@ -137,265 +165,326 @@ class _QuestionPageState extends State<QuestionPage> {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
+        content: Text(message, style: const TextStyle(color: white)),
+        backgroundColor: darkGray,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+        style: const TextStyle(
+          fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: Theme.of(context).primaryColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(
-          5,
-          (_) => Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: 24,
-            height: 3,
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+          color: black,
         ),
       ),
     );
   }
 
   Widget _buildNameInput() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('Tên của bạn là gì?'),
-            TextFormField(
-              controller: _nameController,
-              validator: _validateName,
-              decoration: const InputDecoration(
-                hintText: 'Nhập tên đầy đủ của bạn...',
-                prefixIcon: Icon(Icons.person),
-                border: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                ),
-              ),
-              textCapitalization: TextCapitalization.words,
-              onChanged: (value) => setState(() {}),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Tên của bạn là gì?'),
+        TextFormField(
+          controller: _nameController,
+          validator: _validateName,
+          style: const TextStyle(fontSize: 16, color: black, fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            hintText: 'Nhập tên đầy đủ',
+            hintStyle: const TextStyle(color: mediumGray, fontWeight: FontWeight.w400),
+            prefixIcon: const Icon(Icons.person_outline, color: mediumGray, size: 22),
+            filled: true, // Ensure background color is applied
+            fillColor: white, // Explicitly set background to white
+            contentPadding: const EdgeInsets.all(16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: lightGray, width: 1),
             ),
-          ],
+            enabledBorder: OutlineInputBorder( // Ensure consistent border when enabled
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: lightGray, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder( // Focus border
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: primaryBlue, width: 2),
+            ),
+            errorBorder: OutlineInputBorder( // Error border
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: darkGray, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder( // Focused error border
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: darkGray, width: 2),
+            ),
+          ),
+          textCapitalization: TextCapitalization.words,
+          onChanged: (value) => setState(() {}),
         ),
-      ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
   Widget _buildBirthDatePicker() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('Ngày sinh của bạn là gì?'),
-            InkWell(
-              onTap: _pickBirthDate,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _birthDate == null
-                          ? 'Chọn ngày sinh'
-                          : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}${_birthDate != null ? ' (${_calculateAge(_birthDate!)} tuổi)' : ''}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: _birthDate == null ? Colors.grey : Colors.black,
-                      ),
-                    ),
-                    const Icon(Icons.calendar_today),
-                  ],
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Bạn sinh ngày bao nhiêu?'),
+        InkWell(
+          onTap: _pickBirthDate,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: white, // Explicitly set background to white
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: lightGray, width: 1),
             ),
-          ],
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined, color: mediumGray, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _birthDate == null
+                        ? 'Chọn ngày sinh'
+                        : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year} (${_calculateAge(_birthDate!)} tuổi)',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: _birthDate == null ? mediumGray : black,
+                      fontWeight: _birthDate == null ? FontWeight.w400 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.arrow_drop_down, color: mediumGray),
+              ],
+            ),
+          ),
         ),
-      ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
   Widget _buildGenderSelector() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('Giới tính của bạn là gì?'),
-            DropdownButtonFormField<String>(
-              value: _gender,
-              items: _genders.map((g) => DropdownMenuItem(
-                value: g,
-                child: Row(
-                  children: [
-                    Icon(
-                      g == 'Nam' ? Icons.male : 
-                      g == 'Nữ' ? Icons.female : Icons.transgender,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(g),
-                  ],
-                ),
-              )).toList(),
-              onChanged: (val) => setState(() => _gender = val),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person_outline),
-                hintText: 'Chọn giới tính',
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Giới tính của bạn'),
+        DropdownButtonFormField<String>(
+          value: _gender,
+          isExpanded: true,
+          icon: const Icon(Icons.arrow_drop_down, color: mediumGray),
+          style: const TextStyle(
+            fontSize: 16,
+            color: black,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Chọn giới tính',
+            hintStyle: const TextStyle(color: mediumGray, fontWeight: FontWeight.w400),
+            prefixIcon: const Icon(Icons.person_outline, color: mediumGray, size: 22),
+            filled: true, // Ensure background color is applied
+            fillColor: white, // Explicitly set background to white
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: lightGray, width: 1),
             ),
-          ],
+            enabledBorder: OutlineInputBorder( // Ensure consistent border when enabled
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: lightGray, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder( // Focus border
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: primaryBlue, width: 2),
+            ),
+            errorBorder: OutlineInputBorder( // Error border
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: darkGray, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder( // Focused error border
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: darkGray, width: 2),
+            ),
+          ),
+          dropdownColor: white, // Ensure dropdown menu itself is white
+          items: _genders.map((g) => DropdownMenuItem(
+            value: g,
+            child: Row(
+              children: [
+                Icon(
+                  g == 'Nam' ? Icons.male :
+                  g == 'Nữ' ? Icons.female : Icons.transgender,
+                  color: primaryBlue,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  g,
+                  style: const TextStyle(
+                    color: black,
+                  ),
+                ),
+              ],
+            ),
+          )).toList(),
+          onChanged: (val) => setState(() => _gender = val),
+          selectedItemBuilder: (BuildContext context) {
+            return _genders.map((String value) {
+              return Text(
+                value,
+                style: const TextStyle(color: black),
+              );
+            }).toList();
+          },
         ),
-      ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
   Widget _buildBodyTypeSelector() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('Bạn thuộc dáng người như nào?'),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 3,
-              ),
-              itemCount: _bodyTypes.length,
-              itemBuilder: (context, index) {
-                final bodyType = _bodyTypes[index];
-                final isSelected = _bodyType == bodyType['type'];
-                return InkWell(
-                  onTap: () => setState(() => _bodyType = bodyType['type']),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
-                        width: isSelected ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          bodyType['type']!,
-                          style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? Theme.of(context).primaryColor : null,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          bodyType['description']!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Chọn dáng người',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-      ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.6, // Giảm aspect ratio để item cao hơn, tránh overflow
+          ),
+          itemCount: _bodyTypes.length,
+          itemBuilder: (context, index) {
+            final bodyType = _bodyTypes[index];
+            final isSelected = _bodyType == bodyType['type'];
+            return GestureDetector(
+              onTap: () => setState(() => _bodyType = bodyType['type']),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isSelected ? primaryBlue : white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? primaryBlue : lightGray,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      bodyType['type']!,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? white : black,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      bodyType['description']!,
+                      textAlign: TextAlign.center,
+                      maxLines: 2, // Giới hạn 2 dòng
+                      overflow: TextOverflow.ellipsis, // Ellipsis nếu tràn
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSelected ? white.withAlpha((255 * 0.9).round()) : mediumGray,
+                        fontWeight: FontWeight.w400,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: lightGray,
       appBar: AppBar(
-        title: const Text('Thông tin cá nhân'),
+        backgroundColor: white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Thông tin cá nhân',
+          style: TextStyle(color: black, fontSize: 18, fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_outlined, color: darkGray),
             onPressed: () => FirebaseAuth.instance.signOut(),
-            tooltip: 'Đăng xuất',
+            tooltip: 'Đăng xuất', // Added tooltip for accessibility
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: primaryBlue, strokeWidth: 2)) // Consistent strokeWidth
           : Form(
               key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildNameInput(),
-                    _buildDivider(),
-                    _buildBirthDatePicker(),
-                    _buildDivider(),
-                    _buildGenderSelector(),
-                    _buildDivider(),
-                    _buildBodyTypeSelector(),
-                    const SizedBox(height: 32),
-                    SizedBox(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildNameInput(),
+                          _buildBirthDatePicker(),
+                          _buildGenderSelector(),
+                          _buildBodyTypeSelector(),
+                          SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
+                      child: ElevatedButton(
                         onPressed: _submit,
-                        icon: const Icon(Icons.arrow_forward),
-                        label: const Text('Tiếp tục'),
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryBlue,
+                          foregroundColor: white, // Text color for button
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Tiếp tục',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
     );

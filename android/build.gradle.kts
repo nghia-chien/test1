@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.android") version "1.8.22" apply false
     id("com.google.gms.google-services") version "4.4.2" apply false
 }
+
 buildscript {
     repositories {
         google()
@@ -13,6 +14,7 @@ buildscript {
         classpath("com.android.tools.build:gradle:8.2.2")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22")
         classpath("com.google.gms:google-services:4.4.2")
+        classpath("com.facebook.android:facebook-android-sdk:16.3.0")
     }
 }
 
@@ -23,13 +25,14 @@ allprojects {
     }
 }
 
-val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
-rootProject.layout.buildDirectory.value(newBuildDir)
+val newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.set(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
+    val newSubprojectBuildDir = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.set(newSubprojectBuildDir)
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
