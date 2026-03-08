@@ -134,8 +134,8 @@ Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE`
 
 ## Liên hệ
 
-Nếu bạn có câu hỏi hoặc cần hỗ trợ, vui lòng liên hệ qua email: your-email@example.com
+Nếu bạn có câu hỏi hoặc cần hỗ trợ, vui lòng liên hệ qua email: hacphichien@gmail.com
 
 ---
 
-*Được phát triển với ❤️ bởi [Tên của bạn]*
+*Được phát triển với ❤️ bởi nghia-chien, nguyenanhnhuhuynh , dokhanguyen
