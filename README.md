@@ -118,16 +118,6 @@ lib/
 - **Provider**: Quản lý trạng thái.
 - **HTTP**: Gọi API.
 
-## Đóng góp
-
-Chúng tôi hoan nghênh mọi đóng góp! Vui lòng:
-
-1. Fork repository.
-2. Tạo branch mới cho tính năng của bạn (`git checkout -b feature/AmazingFeature`).
-3. Commit thay đổi (`git commit -m 'Add some AmazingFeature'`).
-4. Push lên branch (`git push origin feature/AmazingFeature`).
-5. Tạo Pull Request.
-
 ## Giấy phép
 
 Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE` để biết thêm chi tiết.
